@@ -80,10 +80,12 @@ jobs:
           TAG: ${{ env.RELEASE_TAG }}
         run: |
           mkdir -p release-assets
-          cp app/build/outputs/apk/generic/release/app-generic-release.apk \
-             "release-assets/eink-launcher-$TAG-generic.apk"
-          cp app/build/outputs/apk/supernote/release/app-supernote-release.apk \
-             "release-assets/eink-launcher-$TAG-supernote.apk"
+          # AGP outputs "app-{flavor}-release.apk" when signed, "app-{flavor}-release-unsigned.apk" when not.
+          # Glob handles both.
+          for flavor in generic supernote; do
+            src=$(ls -1 "app/build/outputs/apk/$flavor/release/"*.apk | head -1)
+            cp "$src" "release-assets/eink-launcher-$TAG-$flavor.apk"
+          done
           ls -lh release-assets/
 
       - name: Create GitHub Release
