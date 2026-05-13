@@ -50,6 +50,7 @@ public class AppDataCenter {
   private LauncherAdapter adapter;
   private AppItemBinder binder;
   private TextView pageStatus;
+  private cn.modificator.launcher.widgets.PageIndicator pageIndicator;
   private final Set<String> hideApps = new HashSet<>();
   private int sortMode = AppSortComparator.SORT_NAME_ASC;
   private boolean hideSystemApps = false;
@@ -133,6 +134,11 @@ public class AppDataCenter {
   public void setPageStatus(TextView pageStatus) {
     this.pageStatus = pageStatus;
     pageStatus.setText((pageIndex + 1) + "/" + (pageCount + 1));
+  }
+
+  public void setPageIndicator(cn.modificator.launcher.widgets.PageIndicator indicator) {
+    this.pageIndicator = indicator;
+    if (indicator != null) indicator.set(pageCount + 1, pageIndex);
   }
 
   // =========================================================================
@@ -343,6 +349,7 @@ public class AppDataCenter {
     int pageEnd = Math.min(pageStart + itemCount, mApps.size());
     adapter.setAppList(mApps.subList(pageStart, pageEnd));
     pageStatus.setText((pageIndex + 1) + "/" + (pageCount + 1));
+    if (pageIndicator != null) pageIndicator.set(pageCount + 1, pageIndex);
   }
 
   private void updatePageCount() {

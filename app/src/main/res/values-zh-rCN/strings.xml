@@ -119,6 +119,8 @@
     <string name="app_action_copy_pkg">复制包名</string>
     <string name="app_action_force_stop">强制停止（进应用信息）</string>
     <string name="app_action_uninstall">卸载</string>
+    <string name="app_action_rename">重命名</string>
+    <string name="app_action_rename_reset">恢复默认</string>
     <string name="toast_copied">已复制</string>
     <string name="app_usage_today_summary">今日：%1$d 次启动 · %2$s</string>
     <string name="app_usage_total_summary">近 90 天总计：%1$s</string>
@@ -135,6 +137,9 @@
     <string name="hidden_no_apps">无隐藏应用</string>
     <string name="hidden_restored">已恢复</string>
     <string name="hidden_restored_all">已全部恢复</string>
+
+    <string name="setting_gesture_help">手势速查</string>
+    <string name="gesture_help_body">• 点击 app — 启动\n• 长按 app — 重命名 / 隐藏 / 应用信息 / 强制停止 / 卸载 / 加入文件夹 / 使用统计\n• 点击文件夹 — 打开内容\n• 长按文件夹 — 重命名 / 拆散\n\n• 点击 ⚙ — 打开设置\n• 长按 ⚙ — 搜索应用\n\n• 点击 WiFi 图标 — 切换（Android 10+ 跳设置面板）\n• 长按 WiFi — 进 WiFi 设置\n• 点击蓝牙 — 切换 / 进设置\n• 长按蓝牙 — 已配对设备快速连接（含上次连接时间）\n• 点击锁屏 — 一键锁屏\n• 长按锁屏 — 电源菜单（仅系统应用可用）\n\n• 点击时钟 — 立即更新\n• 长按时钟 — 强制刷屏（清残影）\n• 双击空白格 — 同上\n\n• 网格向左滑 — 下一页\n• 网格向右滑 — 上一页\n• 起始于屏幕边缘的手势让给系统（Supernote 侧栏等）\n\n• 在其他 app 内 — 长按 launcher 图标 / 锁屏 / 搜索 / 设置</string>
 
     <string name="about_author_info">原作者: Modificator\n邮箱: yunshangcn@gmail.com\n本分支为个人维护版本。</string>
     <string name="about_thanks">致谢:\nMaciej Haudek &lt;kontakt@haudek.com&gt;</string>

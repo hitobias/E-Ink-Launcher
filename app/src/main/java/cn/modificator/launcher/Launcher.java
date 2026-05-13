@@ -271,6 +271,7 @@ public class Launcher extends FragmentActivity
     binder.setCallback(this);
     binder.setIconCache(iconCache);
     binder.setHideAppPkg(config.getHideApps());
+    binder.setLabelOverride(pkg -> config.getRename(pkg));
     adapter = new LauncherAdapter();
     adapter.setBinder(binder);
     adapter.setFontSize(config.getFontSize());
@@ -293,6 +294,8 @@ public class Launcher extends FragmentActivity
     dataCenter.setPinRecentCount(config.getPinRecentCount());
     dataCenter.setHideApps(config.getHideApps());
     dataCenter.setPageStatus(pageStatus);
+    cn.modificator.launcher.widgets.PageIndicator indicator = findViewById(R.id.pageIndicator);
+    if (indicator != null) dataCenter.setPageIndicator(indicator);
     dataCenter.setAdapter(adapter);
 
     // 一次性配置网格参数，避免多次重建
@@ -851,6 +854,7 @@ public class Launcher extends FragmentActivity
   private void showAppInfoDialog(ResolveInfo info, final String packageName) {
     CharSequence[] actions = new CharSequence[]{
         getString(R.string.folder_add_to),
+        getString(R.string.app_action_rename),
         getString(R.string.app_action_app_info),
         getString(R.string.app_action_hide),
         getString(R.string.app_action_copy_pkg),
@@ -867,18 +871,21 @@ public class Launcher extends FragmentActivity
               addAppToFolder(packageName);
               break;
             case 1:
-              openAppDetailsSettings(packageName);
+              promptRenameApp(info, packageName);
               break;
             case 2:
-              toggleAppHidden(packageName);
-              break;
-            case 3:
-              copyToClipboard(packageName);
-              break;
-            case 4:
               openAppDetailsSettings(packageName);
               break;
+            case 3:
+              toggleAppHidden(packageName);
+              break;
+            case 4:
+              copyToClipboard(packageName);
+              break;
             case 5:
+              openAppDetailsSettings(packageName);
+              break;
+            case 6:
               startActivity(new Intent(Intent.ACTION_DELETE,
                   Uri.parse("package:" + packageName)));
               break;
@@ -916,6 +923,40 @@ public class Launcher extends FragmentActivity
     mins = mins % 60;
     if (hours > 0) return hours + "h " + mins + "m";
     return mins + "m";
+  }
+
+  /** 弹出 EditText 让用户重命名 app；空串 = 恢复系统名。 */
+  private void promptRenameApp(ResolveInfo info, String packageName) {
+    String current = config.getRename(packageName);
+    CharSequence systemLabel = iconCache.getLabel(packageName, info, getPackageManager());
+
+    final android.widget.EditText input = new android.widget.EditText(this);
+    input.setSingleLine();
+    input.setText(current != null ? current : systemLabel);
+    input.selectAll();
+    int pad = Utils.dp2Px(this, 16);
+    android.widget.FrameLayout container = new android.widget.FrameLayout(this);
+    container.setPadding(pad, pad / 2, pad, 0);
+    container.addView(input);
+
+    new AlertDialog.Builder(this)
+        .setTitle(R.string.app_action_rename)
+        .setView(container)
+        .setPositiveButton(android.R.string.ok, (d, w) -> {
+          String typed = input.getText().toString().trim();
+          if (typed.isEmpty() || typed.contentEquals(systemLabel)) {
+            config.setRename(packageName, null);
+          } else {
+            config.setRename(packageName, typed);
+          }
+          if (adapter != null) adapter.refreshDisplay();
+        })
+        .setNeutralButton(R.string.app_action_rename_reset, (d, w) -> {
+          config.setRename(packageName, null);
+          if (adapter != null) adapter.refreshDisplay();
+        })
+        .setNegativeButton(R.string.dialog_cancel, null)
+        .show();
   }
 
   private void openAppDetailsSettings(String packageName) {

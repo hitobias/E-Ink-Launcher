@@ -65,6 +65,9 @@ public class AppItemBinder {
   private FolderStore folderStore;
   private boolean isDelete = false;
   private boolean notificationBadgeEnabled = false;
+  /** 用户对 app 的自定义标签查询；返回 null 表示用系统 label。 */
+  public interface LabelOverride { String override(String pkg); }
+  private LabelOverride labelOverride;
 
   // 当前绑定的数据（由 Adapter 在 bindAll 时传入）
   private List<ResolveInfo> dataRef;
@@ -83,6 +86,10 @@ public class AppItemBinder {
 
   public void setCallback(Callback callback) {
     this.callback = callback;
+  }
+
+  public void setLabelOverride(LabelOverride override) {
+    this.labelOverride = override;
   }
 
   public void setIconCache(IconCache iconCache) {
@@ -237,9 +244,15 @@ public class AppItemBinder {
       }
     } else {
       loadIcon(holder.appImage, pkg, info, customIcons);
-      CharSequence newLabel = iconCache != null
-          ? iconCache.getLabel(pkg, info, packageManager)
-          : info.loadLabel(packageManager);
+      CharSequence newLabel;
+      String custom = labelOverride != null ? labelOverride.override(pkg) : null;
+      if (custom != null) {
+        newLabel = custom;
+      } else {
+        newLabel = iconCache != null
+            ? iconCache.getLabel(pkg, info, packageManager)
+            : info.loadLabel(packageManager);
+      }
       if (!TextUtils.equals(holder.appName.getText(), newLabel)) {
         holder.appName.setText(newLabel);
       }

@@ -32,6 +32,8 @@ public class Config {
   public static final String KEY_AUTO_REFRESH_MIN = "launcherAutoRefreshMin";
   /** 置顶最近使用应用数量（0 = 关闭，3/5/8 = 钉住前 N 个）。 */
   public static final String KEY_PIN_RECENT_COUNT = "launcherPinRecentCount";
+  /** 每个 app 的用户自定义显示名；存为 prefs 内 "rename_<pkg>" 单独 key 避免合并冲突。 */
+  public static final String KEY_RENAME_PREFIX = "rename_";
   /** 通知角标总开关（默认关闭，开启时需要用户授予通知访问权限）。 */
   public static final String KEY_NOTIFICATION_BADGE = "launcherNotificationBadge";
   /** Schema 版本号，用于将来字段重命名 / 类型变更时做迁移。 */
@@ -313,5 +315,24 @@ public class Config {
 
   public void setNotificationBadgeEnabled(boolean enabled) {
     prefs.edit().putBoolean(KEY_NOTIFICATION_BADGE, enabled).apply();
+  }
+
+  // ---- per-app 重命名 ----
+
+  /** 返回该 app 的自定义显示名；未设置时返回 null。 */
+  public String getRename(String packageName) {
+    if (packageName == null || packageName.isEmpty()) return null;
+    String v = prefs.getString(KEY_RENAME_PREFIX + packageName, null);
+    return (v == null || v.isEmpty()) ? null : v;
+  }
+
+  public void setRename(String packageName, String customName) {
+    if (packageName == null || packageName.isEmpty()) return;
+    String key = KEY_RENAME_PREFIX + packageName;
+    if (customName == null || customName.isEmpty()) {
+      prefs.edit().remove(key).apply();
+    } else {
+      prefs.edit().putString(key, customName).apply();
+    }
   }
 }

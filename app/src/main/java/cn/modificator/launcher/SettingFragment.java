@@ -248,6 +248,25 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     if (importConfig != null) importConfig.setOnClickListener(this);
     View hiddenAppsManager = root.findViewById(R.id.hiddenAppsManager);
     if (hiddenAppsManager != null) hiddenAppsManager.setOnClickListener(this);
+    View gestureHelp = root.findViewById(R.id.gestureHelp);
+    if (gestureHelp != null) gestureHelp.setOnClickListener(this);
+  }
+
+  private void showGestureCheatSheet() {
+    String body = getString(R.string.gesture_help_body);
+    android.widget.TextView tv = new android.widget.TextView(requireContext());
+    tv.setText(body);
+    tv.setTextColor(0xff000000);
+    tv.setTextSize(14);
+    int p = Utils.dp2Px(requireContext(), 16);
+    tv.setPadding(p, p, p, p);
+    android.widget.ScrollView sv = new android.widget.ScrollView(requireContext());
+    sv.addView(tv);
+    new android.app.AlertDialog.Builder(requireContext())
+        .setTitle(R.string.setting_gesture_help)
+        .setView(sv)
+        .setPositiveButton(R.string.dialog_close, null)
+        .show();
   }
 
   private void initSpinners() {
@@ -386,6 +405,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
       importConfigLauncher.launch(new String[]{"application/json", "*/*"});
     } else if (id == R.id.hiddenAppsManager) {
       startActivity(new Intent(requireContext(), HiddenAppsActivity.class));
+    } else if (id == R.id.gestureHelp) {
+      showGestureCheatSheet();
     } else if (id == R.id.openDeviceManager) {
       try {
         startActivity(new Intent().setComponent(new android.content.ComponentName(
