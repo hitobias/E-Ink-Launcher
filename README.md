@@ -1,5 +1,9 @@
 ## E-Ink Launcher
 
+[![Build APK](https://github.com/hitobias/E-Ink-Launcher/actions/workflows/build.yml/badge.svg?branch=v0.x)](https://github.com/hitobias/E-Ink-Launcher/actions/workflows/build.yml)
+[![Latest release](https://img.shields.io/github/v/release/hitobias/E-Ink-Launcher)](https://github.com/hitobias/E-Ink-Launcher/releases/latest)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
 `E-Ink Launcher` is a minimal Android launcher optimized for electronic-paper devices
 (Onyx Boox, Supernote, Pocketbook, etc.).
 

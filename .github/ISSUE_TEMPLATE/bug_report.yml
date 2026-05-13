@@ -1,0 +1,51 @@
+name: Bug report
+description: Something broken or behaving wrong
+title: "[bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill in as much as you can.
+
+  - type: dropdown
+    id: flavor
+    attributes:
+      label: APK flavor
+      options:
+        - generic
+        - supernote
+        - built from source
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Launcher version
+      placeholder: "v0.2.1"
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device model / ROM
+      placeholder: "Supernote Manta / Chauvet OS 3.x"
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logcat / screenshots
+      description: |
+        Useful: `adb logcat | grep -i "modificator\|EpdRefresh\|BluetoothControl"` snippets.
+        Or a screenshot of the launcher state.
+      render: shell
