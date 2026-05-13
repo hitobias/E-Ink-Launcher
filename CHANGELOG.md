@@ -2,6 +2,23 @@
 
 All notable changes to this fork.
 
+## [0.2.7] — 2026-05-13
+
+### Added
+- **Right-Slider Redirect diagnostics**: long-press the *Redirect Supernote
+  Right-Slider* setting row to open a dialog showing live status —
+  SupernoteLauncher install state, accessibility-service grant state, and
+  the last 30 window-state events observed by the accessibility service.
+  Lets users see whether the right-slider triggers any package at all on
+  their specific device, and whether the package matches the watched name.
+
+### Changed
+- Accessibility service no longer restricts events to a single package
+  name. It still only redirects for `com.ratta.supernote.launcher` matches,
+  but now records all window-state changes into a 30-event ring buffer so
+  the diagnostics dialog can reveal the actual package fired by the OEM
+  gesture (which may differ between Supernote firmware versions).
+
 ## [0.2.6] — 2026-05-13
 
 ### Changed

@@ -18,5 +18,4 @@
     android:canRetrieveWindowContent="false"
     android:description="@string/launcher_redirect_description"
     android:notificationTimeout="50"
-    android:packageNames="com.ratta.supernote.launcher"
     android:summary="@string/launcher_redirect_summary" />

@@ -44,6 +44,11 @@ public final class LauncherRedirectService extends AccessibilityService {
   );
 
   private static final long DEBOUNCE_MS = 300L;
+  /** 環形緩衝大小：保留最近 N 次前台變更供診斷。 */
+  private static final int RING_SIZE = 30;
+  /** 最近觀察到的 (timestamp, packageName) — 由所有 instance 共享給 Diagnostics 讀取。 */
+  private static final java.util.ArrayDeque<long[]> EVENT_TIMES = new java.util.ArrayDeque<>();
+  private static final java.util.ArrayDeque<String> EVENT_PKGS = new java.util.ArrayDeque<>();
 
   private long lastRedirectAt = 0L;
   private Config config;
@@ -62,20 +67,24 @@ public final class LauncherRedirectService extends AccessibilityService {
     info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED;
     info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;
     info.notificationTimeout = 50;
-    // 限制 packageNames：系統只把這些包的事件送來，CPU 友好。
-    info.packageNames = WATCHED_PACKAGES.toArray(new String[0]);
+    // 接收所有包的事件：診斷需要看用戶實際觸發的是哪個 package；
+    // 真正轉發仍只對 WATCHED_PACKAGES 命中，CPU 影響可忽略（窗口切換頻率低）。
+    info.packageNames = null;
     setServiceInfo(info);
   }
 
   @Override
   public void onAccessibilityEvent(AccessibilityEvent event) {
     if (event == null) return;
-    if (config != null && !config.isLauncherRedirectEnabled()) return;
     if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
-
     CharSequence pkg = event.getPackageName();
     if (TextUtils.isEmpty(pkg)) return;
-    if (!WATCHED_PACKAGES.contains(pkg.toString())) return;
+
+    String pkgStr = pkg.toString();
+    recordEvent(pkgStr);
+
+    if (config != null && !config.isLauncherRedirectEnabled()) return;
+    if (!WATCHED_PACKAGES.contains(pkgStr)) return;
 
     long now = SystemClock.uptimeMillis();
     if (now - lastRedirectAt < DEBOUNCE_MS) return;
@@ -89,6 +98,35 @@ public final class LauncherRedirectService extends AccessibilityService {
     } catch (Exception e) {
       Log.w(TAG, "HOME intent failed", e);
     }
+  }
+
+  private static synchronized void recordEvent(String pkg) {
+    long ts = System.currentTimeMillis();
+    EVENT_TIMES.addLast(new long[]{ts});
+    EVENT_PKGS.addLast(pkg);
+    while (EVENT_PKGS.size() > RING_SIZE) {
+      EVENT_TIMES.removeFirst();
+      EVENT_PKGS.removeFirst();
+    }
+  }
+
+  /** 返回最近觀察到的窗口切換事件，最新的在最後。 */
+  public static synchronized java.util.List<String> recentEvents() {
+    java.util.ArrayList<String> out = new java.util.ArrayList<>(EVENT_PKGS.size());
+    java.util.Iterator<long[]> tIt = EVENT_TIMES.iterator();
+    java.util.Iterator<String> pIt = EVENT_PKGS.iterator();
+    while (tIt.hasNext() && pIt.hasNext()) {
+      long ts = tIt.next()[0];
+      String pkg = pIt.next();
+      out.add(formatTime(ts) + "  " + pkg);
+    }
+    return out;
+  }
+
+  private static String formatTime(long epochMs) {
+    java.text.SimpleDateFormat f =
+        new java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US);
+    return f.format(new java.util.Date(epochMs));
   }
 
   @Override

@@ -245,6 +245,10 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     launcherRedirect = root.findViewById(R.id.launcherRedirect);
     if (launcherRedirect != null) {
       launcherRedirect.setOnClickListener(this);
+      launcherRedirect.setOnLongClickListener(v -> {
+        showRedirectDiagnostics();
+        return true;
+      });
       updateLauncherRedirectLabel();
     }
     fontControl.setProgress((int) ((config.getFontSize() - 10) * 10));
@@ -881,6 +885,26 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
         && cn.modificator.launcher.model.LauncherRedirectService.isEnabled(requireContext());
     launcherRedirect.getPaint().setStrikeThruText(!active);
     launcherRedirect.invalidate();
+  }
+
+  /** 長按設定項時顯示診斷報告，協助排查右側滑條為何沒反應。 */
+  private void showRedirectDiagnostics() {
+    String report = LauncherRedirectDiagnostics.build(requireContext());
+    TextView tv = new TextView(requireContext());
+    tv.setText(report);
+    tv.setTextColor(0xff000000);
+    tv.setTextSize(12);
+    tv.setTextIsSelectable(true);
+    tv.setTypeface(android.graphics.Typeface.MONOSPACE);
+    int pad = cn.modificator.launcher.Utils.dp2Px(requireContext(), 16);
+    tv.setPadding(pad, pad, pad, pad);
+    new android.app.AlertDialog.Builder(requireContext())
+        .setTitle(R.string.setting_launcher_redirect)
+        .setView(tv)
+        .setPositiveButton(R.string.dialog_close, null)
+        .setNeutralButton(R.string.launcher_redirect_open_supernote, (d, w) ->
+            openSupernoteLauncherAppInfo())
+        .show();
   }
 
   /**
