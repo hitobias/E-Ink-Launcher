@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <shortcut
+        android:shortcutId="lock"
+        android:enabled="true"
+        android:icon="@drawable/ic_onekeylock"
+        android:shortcutShortLabel="@string/shortcut_lock"
+        android:shortcutLongLabel="@string/shortcut_lock_long">
+        <intent
+            android:action="cn.modificator.launcher.action.SHORTCUT_LOCK"
+            android:targetPackage="cn.modificator.launcher"
+            android:targetClass="cn.modificator.launcher.Launcher" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="search"
+        android:enabled="true"
+        android:icon="@drawable/navibar_icon_settings_highlight"
+        android:shortcutShortLabel="@string/shortcut_search"
+        android:shortcutLongLabel="@string/shortcut_search_long">
+        <intent
+            android:action="cn.modificator.launcher.action.SHORTCUT_SEARCH"
+            android:targetPackage="cn.modificator.launcher"
+            android:targetClass="cn.modificator.launcher.Launcher" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="settings"
+        android:enabled="true"
+        android:icon="@drawable/navibar_icon_settings_highlight"
+        android:shortcutShortLabel="@string/shortcut_settings"
+        android:shortcutLongLabel="@string/shortcut_settings_long">
+        <intent
+            android:action="cn.modificator.launcher.action.SHORTCUT_SETTINGS"
+            android:targetPackage="cn.modificator.launcher"
+            android:targetClass="cn.modificator.launcher.Launcher" />
+    </shortcut>
+
+</shortcuts>

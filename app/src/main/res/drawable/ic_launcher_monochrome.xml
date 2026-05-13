@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Monochrome layer for Android 13+ themed icons. Same shape as foreground. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:fillColor="#000000"
+        android:pathData="M30,30 L48,30 A2,2 0 0 1 50,32 L50,48 A2,2 0 0 1 48,50 L32,50 A2,2 0 0 1 30,48 L30,32 A2,2 0 0 1 32,30 Z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M60,30 L76,30 A2,2 0 0 1 78,32 L78,48 A2,2 0 0 1 76,50 L60,50 A2,2 0 0 1 58,48 L58,32 A2,2 0 0 1 60,30 Z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M30,60 L46,60 A2,2 0 0 1 48,62 L48,76 A2,2 0 0 1 46,78 L32,78 A2,2 0 0 1 30,76 L30,62 A2,2 0 0 1 32,60 Z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M60,60 L76,60 A2,2 0 0 1 78,62 L78,76 A2,2 0 0 1 76,78 L60,78 A2,2 0 0 1 58,76 L58,62 A2,2 0 0 1 60,60 Z" />
+</vector>

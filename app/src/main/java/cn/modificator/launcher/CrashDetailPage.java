@@ -1,15 +1,13 @@
 package cn.modificator.launcher;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.Spanned;
-import android.text.SpannedString;
 import android.text.style.AbsoluteSizeSpan;
-import android.text.style.StyleSpan;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,15 +15,26 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import java.io.File;
-import java.io.FileReader;
-
 import androidx.annotation.Nullable;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 public class CrashDetailPage extends Activity {
 
+  private static final int MAX_LOG_BYTES = 256 * 1024;
+
   private TextView btnReLaunch;
   private TextView tvContent;
+
+  @Override
+  protected void attachBaseContext(Context newBase) {
+    String localeTag = new Config(newBase).getLocaleTag();
+    super.attachBaseContext(LocaleManager.wrap(newBase, localeTag));
+  }
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -45,7 +54,6 @@ public class CrashDetailPage extends Activity {
 
     scrollView.addView(tvContent);
 
-
     root.addView(scrollView, new LinearLayout.LayoutParams(-1, -1, 1));
 
     btnReLaunch = new TextView(this);
@@ -62,14 +70,11 @@ public class CrashDetailPage extends Activity {
   }
 
   private void fillErrorContent() {
-    btnReLaunch.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        Intent intent = new Intent(CrashDetailPage.this, Launcher.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        finish();
-      }
+    btnReLaunch.setOnClickListener(v -> {
+      Intent intent = new Intent(CrashDetailPage.this, Launcher.class);
+      intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+      startActivity(intent);
+      finish();
     });
 
     tvContent.setText("");
@@ -82,30 +87,40 @@ public class CrashDetailPage extends Activity {
     tvContent.append("email    : yunshangcn@gmail.com\n");
     tvContent.append("telegram : https://t.me/EInkLauncher\n");
     tvContent.append("github issues : https://github.com/Modificator/E-Ink-Launcher\n");
-    tvContent.append("well it's already open source\n");
-    tvContent.append("当然也可以在酷安应用页反馈\n");
     tvContent.append("Thanks.");
     tvContent.append("\nーーーーーーーーーーーーーーーーーーーー\n");
 
     if (getIntent().hasExtra("crashFile")) {
       String fileName = getIntent().getStringExtra("crashFile");
       File crashFile = new File(getExternalFilesDir("crash"), fileName);
-      try {
-        char[] readData = new char[(int) crashFile.length()];
-        FileReader reader = new FileReader(crashFile);
-        reader.read(readData);
-        tvContent.append(new String(readData));
-        reader.close();
-      } catch (Throwable e) {
-        e.printStackTrace();
-      }
+      tvContent.append(readLogSafely(crashFile));
     }
+  }
+
+  private static CharSequence readLogSafely(File file) {
+    if (!file.exists() || !file.isFile()) return "";
+    StringBuilder out = new StringBuilder();
+    try (BufferedReader reader = new BufferedReader(
+        new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+      char[] buffer = new char[4096];
+      int read;
+      int total = 0;
+      while ((read = reader.read(buffer)) != -1 && total < MAX_LOG_BYTES) {
+        int allow = Math.min(read, MAX_LOG_BYTES - total);
+        out.append(buffer, 0, allow);
+        total += allow;
+      }
+      if (total >= MAX_LOG_BYTES) {
+        out.append("\n... (log truncated)\n");
+      }
+    } catch (Throwable ignored) {
+    }
+    return out;
   }
 
   @Override
   protected void onStart() {
     super.onStart();
     fillErrorContent();
-
   }
 }

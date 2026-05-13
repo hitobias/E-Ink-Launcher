@@ -1,57 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!--package="cn.modificator.launcher" android:sharedUserId="android.uid.system">-->
-
-    <uses-permission android:name="android.permission.RESTART_PACKAGES" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.SHUTDOWN" />
-    <uses-permission android:name="android.permission.REBOOT" />
-    <uses-permission android:name="android.permission.DELETE_PACKAGES"/>
-    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES"/>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
-    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
+
+    <!-- 蓝牙：API < 31 用于直接 toggle；API >= 31 只读状态，无 toggle 权限。 -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-feature
+        android:name="android.hardware.bluetooth"
+        android:required="false" />
+    <!-- SHUTDOWN/REBOOT are signature/system permissions; declared so the lockScreen menu can attempt them on rooted/system installs. -->
+    <uses-permission android:name="android.permission.SHUTDOWN" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.REBOOT" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- Legacy storage permissions, only needed when reading custom icon files from public Documents on older Android. -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <!-- Custom icons are PNG files; on API 33+ requires media images permission. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <application
         android:name=".App"
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/AppTheme"
+        tools:targetApi="tiramisu">
 
         <activity
             android:name="cn.modificator.launcher.Launcher"
-            android:launchMode="singleInstance"
-            android:exported="true">
+            android:exported="true"
+            android:hardwareAccelerated="false"
+            android:launchMode="singleTask"
+            android:stateNotNeeded="true"
+            android:theme="@style/Theme.App.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.HOME" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <category
-                    android:name="com.yotadevices.intent.category.EPD_HOME" />
+                <category android:name="com.yotadevices.intent.category.EPD_HOME" />
             </intent-filter>
-            <meta-data android:name="com.yotadevices.keep_on_epd_screen" android:value="true"/>
+            <meta-data
+                android:name="com.yotadevices.keep_on_epd_screen"
+                android:value="true" />
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
-
-        <service
-            android:name=".ftpservice.FTPService"
-            android:enabled="true"
-            android:exported="true" />
 
         <receiver
             android:name=".model.AdminReceiver"
-            android:permission="android.permission.BIND_DEVICE_ADMIN" android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
             <meta-data
                 android:name="android.app.device_admin"
                 android:resource="@xml/lock" />
@@ -59,25 +86,48 @@
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
             </intent-filter>
         </receiver>
-        <receiver
-            android:name=".ftpservice.FTPReceiver"
-            android:exported="false">
-        </receiver>
-        
         <provider
+            android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileProvider"
-            android:grantUriPermissions="true"
-            android:name="androidx.core.content.FileProvider">
-            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/filepath"/>
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/filepath" />
         </provider>
 
-        <activity android:name=".CrashDetailPage"
-            android:process=":crash_page" android:exported="false">
-            <meta-data android:name="com.yotadevices.keep_on_epd_screen" android:value="true"/>
+        <activity
+            android:name=".HiddenAppsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".CrashDetailPage"
+            android:exported="false"
+            android:process=":crash_page">
+            <meta-data
+                android:name="com.yotadevices.keep_on_epd_screen"
+                android:value="true" />
         </activity>
 
-        <service android:name=".model.HomeEntranceService">
+        <service
+            android:name=".model.HomeEntranceService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Persistent notification that returns the user to the e-ink launcher on devices where Home key cannot be remapped." />
         </service>
+
+        <service
+            android:name=".model.NotificationCounter"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
     </application>
 
 </manifest>

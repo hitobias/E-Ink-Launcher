@@ -47,12 +47,24 @@ public class AppSortComparator implements Comparator<ResolveInfo> {
   private final Collator collator;
   private final Map<String, Long> installTimeCache = new HashMap<>();
   private Map<String, UsageStats> usageStatsMap;
+  /** 文件夹 id -> 名称；null 表示当前没有文件夹（文件夹按虚拟图标排到末尾）。 */
+  private final Map<String, String> folderIdToName;
 
   public AppSortComparator(Context context, PackageManager pm, int mode) {
+    this(context, pm, mode, null);
+  }
+
+  /**
+   * @param folderIdToName 文件夹 id 到名称的快照；非 null 时文件夹排在所有普通应用之前，
+   *                       内部按名称字母序。null 时文件夹被当作虚拟图标排到末尾。
+   */
+  public AppSortComparator(Context context, PackageManager pm, int mode,
+                           Map<String, String> folderIdToName) {
     this.mode = mode;
     this.pm = pm;
     this.collator = Collator.getInstance(Locale.getDefault());
     this.collator.setStrength(Collator.PRIMARY);
+    this.folderIdToName = folderIdToName;
 
     if (needsUsageStats()) {
       usageStatsMap = queryUsageStats(context);
@@ -80,6 +92,21 @@ public class AppSortComparator implements Comparator<ResolveInfo> {
 
   @Override
   public int compare(ResolveInfo a, ResolveInfo b) {
+    // 文件夹优先于普通应用、晚于虚拟图标的对侧——
+    // 具体规则：folder 永远比普通 app 排在前；folder 与虚拟图标比，folder 在前。
+    // 我们把文件夹"前置"通过单独的判断实现，再让其他逻辑保持不变。
+    String aFolderId = folderIdOf(a);
+    String bFolderId = folderIdOf(b);
+    if (aFolderId != null || bFolderId != null) {
+      if (aFolderId != null && bFolderId != null) {
+        String na = folderName(aFolderId);
+        String nb = folderName(bFolderId);
+        return collator.compare(na, nb);
+      }
+      // 只有一边是文件夹：文件夹排到前面。
+      return aFolderId != null ? -1 : 1;
+    }
+
     boolean aVirtual = isVirtual(a);
     boolean bVirtual = isVirtual(b);
     if (aVirtual && bVirtual) return 0;
@@ -111,7 +138,28 @@ public class AppSortComparator implements Comparator<ResolveInfo> {
   private boolean isVirtual(ResolveInfo info) {
     String pkg = info.activityInfo.packageName;
     return AppDataCenter.LOCK_PACKAGE_NAME.equals(pkg)
-        || AppDataCenter.WIFI_PACKAGE_NAME.equals(pkg);
+        || AppDataCenter.WIFI_PACKAGE_NAME.equals(pkg)
+        || AppDataCenter.BLUETOOTH_PACKAGE_NAME.equals(pkg);
+  }
+
+  /**
+   * 如果该 ResolveInfo 是文件夹虚拟项且当前 comparator 有文件夹快照，返回文件夹 id；
+   * 否则返回 null。当 {@link #folderIdToName} 为 null（例如未启用文件夹的单元测试），
+   * 文件夹包名不会被识别为"文件夹"，此时 caller 通常也不会构造这种项。
+   */
+  private String folderIdOf(ResolveInfo info) {
+    if (folderIdToName == null) return null;
+    if (info == null || info.activityInfo == null) return null;
+    String id = AppDataCenter.folderIdFromPackage(info.activityInfo.packageName);
+    if (id == null) return null;
+    return folderIdToName.containsKey(id) ? id : null;
+  }
+
+  /** 返回排序用的文件夹显示名；空名退化为 id，让对应项稳定排序。 */
+  private String folderName(String folderId) {
+    String n = folderIdToName != null ? folderIdToName.get(folderId) : null;
+    if (n == null || n.isEmpty()) return folderId;
+    return n;
   }
 
   private int compareByName(ResolveInfo a, ResolveInfo b) {

@@ -1,58 +1,56 @@
 package cn.modificator.launcher.model;
 
-import android.os.Parcel;
-import android.os.Parcelable;
-
-import java.io.Serializable;
-import java.util.Observable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * 可观察的 float 包装类，值变化时通知观察者。
+ * 可观察的 float 值，替代已废弃的 {@link java.util.Observable}。
+ * 仅当值真正变化时通知监听者。
  */
-public class ObservableFloat extends Observable implements Parcelable, Serializable {
-  static final long serialVersionUID = 1L;
-  private float mValue;
+public class ObservableFloat {
 
-  public ObservableFloat(float mValue) {
-    this.mValue = mValue;
+  /** 值变化监听器。 */
+  public interface Listener {
+    void onValueChanged(float value);
   }
+
+  private final List<Listener> listeners = new ArrayList<>();
+  private float value;
+  private boolean hasValue;
 
   public ObservableFloat() {
   }
 
+  public ObservableFloat(float initial) {
+    this.value = initial;
+    this.hasValue = true;
+  }
+
   public float get() {
-    return mValue;
+    return value;
   }
 
-  public void set(float value) {
-    if (mValue != value) {
-      this.mValue = value;
+  public void set(float newValue) {
+    if (hasValue && Float.compare(value, newValue) == 0) {
+      return;
     }
-    setChanged();
-    notifyObservers(mValue);
-  }
-
-  @Override
-  public int describeContents() {
-    return 0;
-  }
-
-  @Override
-  public void writeToParcel(Parcel dest, int flags) {
-    dest.writeFloat(mValue);
-  }
-
-  public static final Parcelable.Creator<ObservableFloat> CREATOR
-      = new Parcelable.Creator<ObservableFloat>() {
-
-    @Override
-    public ObservableFloat createFromParcel(Parcel source) {
-      return new ObservableFloat(source.readFloat());
+    value = newValue;
+    hasValue = true;
+    for (Listener listener : listeners) {
+      listener.onValueChanged(newValue);
     }
+  }
 
-    @Override
-    public ObservableFloat[] newArray(int size) {
-      return new ObservableFloat[size];
-    }
-  };
+  public void addListener(Listener listener) {
+    if (listener == null || listeners.contains(listener)) return;
+    listeners.add(listener);
+  }
+
+  public void removeListener(Listener listener) {
+    listeners.remove(listener);
+  }
+
+  public void clearListeners() {
+    listeners.clear();
+  }
 }

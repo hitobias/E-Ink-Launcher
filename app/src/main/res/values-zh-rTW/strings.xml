@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">E-Ink Launcher</string>
+    <string name="file_manager">檔案瀏覽</string>
+
+    <string name="empty_directory_hint">空資料夾</string>
+    <string name="type_apk">App 安裝包</string>
+    <string name="type_archive">壓縮檔</string>
+    <string name="type_certificate">憑證</string>
+    <string name="type_directory">資料夾</string>
+    <string name="type_document">檔案</string>
+    <string name="type_drawing">相片</string>
+    <string name="type_excel">試算表</string>
+    <string name="type_image">圖片</string>
+    <string name="type_music">音樂</string>
+    <string name="type_pdf">PDF 文件</string>
+    <string name="type_power_point">簡報</string>
+    <string name="type_video">影片</string>
+    <string name="type_word">文件</string>
+
+
+    <string name="setting_show_divider">顯示分隔線</string>
+    <string name="setting_hide_divider">隱藏分隔線</string>
+    <string name="setting_set_font_size">設定字體大小</string>
+    <string name="setting_apps_manager">管理應用</string>
+    <string name="setting_open_device_manager">開啟設備管理員</string>
+    <string name="setting_column_icons">每列圖示</string>
+    <string name="setting_row_icons">每行圖示</string>
+    <string name="battery_heat">電池過熱</string>
+    <string name="battery_unknown">電池呢？</string>
+    <string name="battery_charging">充電中</string>
+    <string name="battery_low">電量低</string>
+    <string name="battery_full">充滿了</string>
+    <string name="battery_wtf" translatable="false">WTF?</string>
+
+    <string name="dialog_cancel">取消</string>
+    <string name="dialog_hide">隱藏</string>
+    <string name="dialog_uninstall">解除安裝</string>
+    <string name="dialog_pkg_name">包名: %s</string>
+    <string name="dialog_close">關閉</string>
+
+    <string name="wifi_status_off">WiFi 已關閉</string>
+    <string name="wifi_status_closing">WiFi 正在關閉</string>
+    <string name="wifi_status_opening">WiFi 正在開啟</string>
+    <string name="wifi_status_on">WiFi 已開啟</string>
+    <string name="wifi_status_connected">WiFi 已連接:%s</string>
+    <string name="wifi_status_connecting">WiFi 連接中</string>
+    <string name="wifi_status_disconnected">WiFi 已斷開</string>
+    <string name="wifi_status_disconnecting">WiFi 斷開中</string>
+
+    <string name="bt_status_off">藍牙 已關閉</string>
+    <string name="bt_status_on">藍牙 已開啟</string>
+    <string name="bt_status_opening">藍牙 開啟中</string>
+    <string name="bt_status_closing">藍牙 關閉中</string>
+    <string name="bt_quick_connect">快速連接</string>
+    <string name="bt_open_settings">藍牙設定</string>
+    <string name="bt_no_paired">無已配對裝置</string>
+    <string name="bt_connecting">連接中…</string>
+    <string name="bt_connect_failed">連接失敗，正在開啟藍牙設定</string>
+    <string name="search_apps_hint">搜尋應用…</string>
+
+    <string name="item_lockscreen">一鍵鎖定</string>
+
+    <string-array name="power_menu">
+        <item>關機</item>
+        <item>重啟</item>
+    </string-array>
+    <string name="setting_help_and_about">說明 &amp; 關於</string>
+    <string name="path">路徑</string>
+    <string name="default_path_setting">設定預設路徑</string>
+    <string name="dialog_confim">確認</string>
+    <string name="parent_folder">上層目錄</string>
+    <string name="exit">退出</string>
+    <string name="delete">刪除</string>
+    <string name="app_manager_finish">完成</string>
+    <string name="power_title" translatable="false">現在可以操作電源了哦~</string>
+    <string name="battery_status_low_battery">電量低</string>
+    <string name="show_custom_icon">顯示自訂圖示</string>
+    <string name="show_statusbar">顯示狀態列</string>
+    <string name="show_wifi_name">顯示 WiFi 名稱</string>
+    <string name="notification_click_back_launcher">點此回到桌面</string>
+    <string name="app_show_name">App 名稱</string>
+    <string name="setting_sort_mode">排序方式</string>
+    <string name="sort_need_usage_permission">此排序模式需要授予使用情況存取權限</string>
+    <string name="launch_failed">啟動失敗</string>
+    <string name="launch_devicemanager">開啟設備管理員</string>
+    <string name="launch_devicemanager_failed">請開啟設備管理員並啟用 E-Ink Launcher</string>
+    <string name="setting_set_font">更換字體</string>
+    <string name="setting_clear_font">恢復系統字體</string>
+    <string name="font_load_failed">字體檔案無效或不支援</string>
+    <string name="setting_set_default_launcher">設為預設桌面</string>
+    <string name="setting_is_default_launcher">✓ 已是預設桌面</string>
+    <string name="setting_language">語言</string>
+    <string name="setting_hide_system_apps">隱藏系統應用</string>
+    <string name="setting_return_notification">顯示返回桌面通知</string>
+    <string name="setting_notification_badge">通知角標</string>
+    <string name="notification_badge_need_access">請先在系統設定中授予通知存取權限</string>
+    <string name="setting_auto_refresh">自動刷屏</string>
+    <string name="setting_auto_refresh_off">關閉</string>
+    <string name="unit_minute">分鐘</string>
+    <string name="setting_pin_recent">置頂最近使用</string>
+    <string name="setting_pin_recent_off">關閉</string>
+    <string name="setting_export_config">匯出設定</string>
+    <string name="setting_import_config">匯入設定</string>
+    <string name="config_export_success">設定已匯出</string>
+    <string name="config_export_failed">匯出失敗</string>
+    <string name="config_import_success">設定已匯入</string>
+    <string name="config_import_failed">匯入失敗：檔案無效</string>
+
+    <string name="shortcut_lock">鎖定</string>
+    <string name="shortcut_lock_long">一鍵鎖屏</string>
+    <string name="shortcut_search">搜尋</string>
+    <string name="shortcut_search_long">搜尋應用</string>
+    <string name="shortcut_settings">設定</string>
+    <string name="shortcut_settings_long">桌面設定</string>
+
+    <string name="app_action_app_info">應用資訊</string>
+    <string name="app_action_hide">隱藏</string>
+    <string name="app_action_copy_pkg">複製包名</string>
+    <string name="app_action_force_stop">強制停止（進應用資訊）</string>
+    <string name="app_action_uninstall">解除安裝</string>
+    <string name="toast_copied">已複製</string>
+    <string name="app_usage_today_summary">今日：%1$d 次啟動 · %2$s</string>
+    <string name="app_usage_total_summary">近 90 天總計：%1$s</string>
+
+    <string name="folder_add_to">加入資料夾…</string>
+    <string name="folder_new">新建資料夾</string>
+    <string name="folder_rename">重新命名</string>
+    <string name="folder_dissolve">解散</string>
+    <string name="folder_default_name">資料夾</string>
+    <string name="folder_name_hint">資料夾名稱</string>
+
+    <string name="setting_hidden_apps_manager">隱藏應用管理</string>
+    <string name="hidden_restore_all">全部恢復</string>
+    <string name="hidden_no_apps">無隱藏應用</string>
+    <string name="hidden_restored">已恢復</string>
+    <string name="hidden_restored_all">已全部恢復</string>
+
+    <string name="about_author_info">原作者: Modificator\n信箱: yunshangcn@gmail.com\n本分支為個人維護版本。</string>
+    <string name="about_thanks">致謝:\nMaciej Haudek &lt;kontakt@haudek.com&gt;</string>
+    <string name="about_description">E-Ink Launcher 是專為墨水屏設備最佳化的極簡桌面。\n\n主要功能：\n• 應用網格，可調密度與字體大小\n• 隱藏 / 排序應用\n• 一鍵鎖屏 / 切換 WiFi / 藍牙\n• 自訂圖示（PNG 放到 Documents/E-Ink Launcher/icon）\n• 自訂字體、應用語言強制覆寫</string>
+</resources>

@@ -3,6 +3,7 @@ package cn.modificator.launcher;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -23,6 +24,21 @@ public class Config {
   public static final String KEY_SHOW_STATUS_BAR = "launcherShowStatusBar";
   public static final String KEY_SHOW_CUSTOM_ICON = "launcherShowCustomIcon";
   public static final String KEY_SORT_MODE = "launcherSortMode";
+  public static final String KEY_FONT_PATH = "launcherFontPath";
+  public static final String KEY_LOCALE_TAG = "launcherLocaleTag";
+  public static final String KEY_HIDE_SYSTEM_APPS = "launcherHideSystemApps";
+  public static final String KEY_RETURN_NOTIFICATION = "launcherReturnNotification";
+  /** 自动刷屏间隔（分钟，0 = 关闭）。 */
+  public static final String KEY_AUTO_REFRESH_MIN = "launcherAutoRefreshMin";
+  /** 置顶最近使用应用数量（0 = 关闭，3/5/8 = 钉住前 N 个）。 */
+  public static final String KEY_PIN_RECENT_COUNT = "launcherPinRecentCount";
+  /** 通知角标总开关（默认关闭，开启时需要用户授予通知访问权限）。 */
+  public static final String KEY_NOTIFICATION_BADGE = "launcherNotificationBadge";
+  /** Schema 版本号，用于将来字段重命名 / 类型变更时做迁移。 */
+  public static final String KEY_SCHEMA_VERSION = "_schemaVersion";
+
+  /** 当前 schema 版本。变更字段时递增，并在 {@link #migrate} 中处理对应版本号。 */
+  public static final int CURRENT_SCHEMA_VERSION = 1;
 
   // ---- 默认值 ----
   private static final int DEFAULT_COL_NUM = 5;
@@ -51,12 +67,30 @@ public class Config {
   private boolean hideAppsLoaded = false;
 
   public Config(Context context) {
-    this.prefs = context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE);
-    // 预加载布尔配置
+    // attachBaseContext 阶段 getApplicationContext() 可能为 null（Robolectric / 部分 ROM）
+    Context appCtx = context.getApplicationContext();
+    if (appCtx == null) appCtx = context;
+    this.prefs = appCtx.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE);
+    migrateIfNeeded();
     this.hideDivider = prefs.getBoolean(KEY_HIDE_DIVIDER, DEFAULT_HIDE_DIVIDER);
     this.showStatusBar = prefs.getBoolean(KEY_SHOW_STATUS_BAR, DEFAULT_SHOW_STATUS_BAR);
     this.showCustomIcon = prefs.getBoolean(KEY_SHOW_CUSTOM_ICON, DEFAULT_SHOW_CUSTOM_ICON);
     this.appNameLines = prefs.getInt(KEY_APP_NAME_LINES, DEFAULT_APP_NAME_LINES);
+  }
+
+  /**
+   * 跑一次性迁移：把存储的 schema 版本升到 {@link #CURRENT_SCHEMA_VERSION}。
+   * 当前版本 1 也清理已废弃的 FTP 偏好键，防止旧版本残留占空间。
+   */
+  private void migrateIfNeeded() {
+    int stored = prefs.getInt(KEY_SCHEMA_VERSION, 0);
+    if (stored == CURRENT_SCHEMA_VERSION) return;
+    SharedPreferences.Editor e = prefs.edit();
+    if (stored < 1) {
+      // v1: 移除 FTP 相关偏好
+      e.remove("ftpPort").remove("ftpUser").remove("ftpPassword");
+    }
+    e.putInt(KEY_SCHEMA_VERSION, CURRENT_SCHEMA_VERSION).apply();
   }
 
   // ---- 列数 ----
@@ -93,33 +127,44 @@ public class Config {
 
   public void addHideApp(String packageName) {
     ensureHideAppsLoaded();
-    hideApps.add(packageName);
-    prefs.edit().putStringSet(KEY_HIDE_APPS, hideApps).apply();
+    if (hideApps.add(packageName)) {
+      persistHideApps();
+    }
   }
 
   public void removeHideApp(String packageName) {
     ensureHideAppsLoaded();
-    hideApps.remove(packageName);
-    prefs.edit().putStringSet(KEY_HIDE_APPS, hideApps).apply();
+    if (hideApps.remove(packageName)) {
+      persistHideApps();
+    }
   }
 
   public void setHideApps(Set<String> hideApps) {
     this.hideApps.clear();
     this.hideApps.addAll(hideApps);
     this.hideAppsLoaded = true;
-    prefs.edit().putStringSet(KEY_HIDE_APPS, this.hideApps).apply();
+    persistHideApps();
   }
 
+  /** 返回隐藏应用集合的只读视图，禁止调用方直接修改内部状态。 */
   public Set<String> getHideApps() {
     ensureHideAppsLoaded();
-    return hideApps;
+    return Collections.unmodifiableSet(hideApps);
   }
 
   private void ensureHideAppsLoaded() {
     if (!hideAppsLoaded) {
-      hideApps.addAll(prefs.getStringSet(KEY_HIDE_APPS, new HashSet<String>()));
+      Set<String> stored = prefs.getStringSet(KEY_HIDE_APPS, null);
+      if (stored != null) {
+        hideApps.addAll(stored);
+      }
       hideAppsLoaded = true;
     }
+  }
+
+  private void persistHideApps() {
+    // 写入前复制，避免与 SharedPreferences 内部副本共享可变 Set。
+    prefs.edit().putStringSet(KEY_HIDE_APPS, new HashSet<>(hideApps)).apply();
   }
 
   // ---- 字体大小 ----
@@ -193,5 +238,80 @@ public class Config {
     if (this.sortMode == mode) return;
     this.sortMode = mode;
     prefs.edit().putInt(KEY_SORT_MODE, mode).apply();
+  }
+
+  // ---- 字体文件 ----
+
+  public String getFontPath() {
+    return prefs.getString(KEY_FONT_PATH, null);
+  }
+
+  public void setFontPath(String path) {
+    prefs.edit().putString(KEY_FONT_PATH, path).apply();
+  }
+
+  public void clearFontPath() {
+    prefs.edit().remove(KEY_FONT_PATH).apply();
+  }
+
+  // ---- 语言 override ----
+
+  /** 返回强制 locale 标签（BCP-47）；空字符串 = 跟随系统。 */
+  public String getLocaleTag() {
+    return prefs.getString(KEY_LOCALE_TAG, "");
+  }
+
+  public void setLocaleTag(String tag) {
+    prefs.edit().putString(KEY_LOCALE_TAG, tag != null ? tag : "").apply();
+  }
+
+  // ---- 隐藏系统应用 ----
+
+  public boolean isHideSystemApps() {
+    return prefs.getBoolean(KEY_HIDE_SYSTEM_APPS, false);
+  }
+
+  public void setHideSystemApps(boolean hide) {
+    prefs.edit().putBoolean(KEY_HIDE_SYSTEM_APPS, hide).apply();
+  }
+
+  // ---- 返回桌面通知 ----
+
+  public boolean isReturnNotificationEnabled() {
+    return prefs.getBoolean(KEY_RETURN_NOTIFICATION, false);
+  }
+
+  public void setReturnNotificationEnabled(boolean enabled) {
+    prefs.edit().putBoolean(KEY_RETURN_NOTIFICATION, enabled).apply();
+  }
+
+  // ---- 自动刷屏 ----
+
+  public int getAutoRefreshMinutes() {
+    return prefs.getInt(KEY_AUTO_REFRESH_MIN, 0);
+  }
+
+  public void setAutoRefreshMinutes(int minutes) {
+    prefs.edit().putInt(KEY_AUTO_REFRESH_MIN, Math.max(0, minutes)).apply();
+  }
+
+  // ---- 置顶最近使用 ----
+
+  public int getPinRecentCount() {
+    return prefs.getInt(KEY_PIN_RECENT_COUNT, 0);
+  }
+
+  public void setPinRecentCount(int n) {
+    prefs.edit().putInt(KEY_PIN_RECENT_COUNT, Math.max(0, n)).apply();
+  }
+
+  // ---- 通知角标 ----
+
+  public boolean isNotificationBadgeEnabled() {
+    return prefs.getBoolean(KEY_NOTIFICATION_BADGE, false);
+  }
+
+  public void setNotificationBadgeEnabled(boolean enabled) {
+    prefs.edit().putBoolean(KEY_NOTIFICATION_BADGE, enabled).apply();
   }
 }

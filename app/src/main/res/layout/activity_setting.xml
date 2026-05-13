@@ -528,6 +528,76 @@
                 android:layout_height="1dp"
                 android:background="#000000" />
 
+            <TextView
+                android:id="@+id/hideSystemApps"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/menu_item_height"
+                android:paddingLeft="20dp"
+                android:gravity="left|center_vertical"
+                android:text="@string/setting_hide_system_apps"
+                android:textSize="@dimen/menu_item_text_size" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#000000" />
+
+            <TextView
+                android:id="@+id/notificationBadge"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/menu_item_height"
+                android:paddingLeft="20dp"
+                android:gravity="left|center_vertical"
+                android:text="@string/setting_notification_badge"
+                android:textSize="@dimen/menu_item_text_size" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#000000" />
+
+            <TextView
+                android:id="@+id/returnNotification"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/menu_item_height"
+                android:paddingLeft="20dp"
+                android:gravity="left|center_vertical"
+                android:text="@string/setting_return_notification"
+                android:textSize="@dimen/menu_item_text_size" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#000000" />
+
+            <TextView
+                android:id="@+id/autoRefresh"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/menu_item_height"
+                android:paddingLeft="20dp"
+                android:gravity="left|center_vertical"
+                android:text="@string/setting_auto_refresh"
+                android:textSize="@dimen/menu_item_text_size" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#000000" />
+
+            <TextView
+                android:id="@+id/pinRecent"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/menu_item_height"
+                android:paddingLeft="20dp"
+                android:gravity="left|center_vertical"
+                android:text="@string/setting_pin_recent"
+                android:textSize="@dimen/menu_item_text_size" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#000000" />
+
             <LinearLayout
                 android:id="@+id/changeFontSize"
                 android:layout_width="match_parent"
@@ -551,6 +621,20 @@
                 android:background="#000000" />
 
             <TextView
+                android:id="@+id/changeFont"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/menu_item_height"
+                android:paddingLeft="20dp"
+                android:gravity="left|center_vertical"
+                android:text="@string/setting_set_font"
+                android:textSize="@dimen/menu_item_text_size" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#000000" />
+
+            <TextView
                 android:id="@+id/deleteApp"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
@@ -566,6 +650,20 @@
                 android:background="#000000" />
 
             <TextView
+                android:id="@+id/hiddenAppsManager"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/menu_item_height"
+                android:gravity="left|center_vertical"
+                android:paddingLeft="20dp"
+                android:text="@string/setting_hidden_apps_manager"
+                android:textSize="@dimen/menu_item_text_size" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#000000" />
+
+            <TextView
                 android:id="@+id/openDeviceManager"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
@@ -573,6 +671,62 @@
                 android:paddingLeft="20dp"
                 android:text="@string/setting_open_device_manager"
                 android:textSize="@dimen/menu_item_text_size"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#000000" />
+
+            <TextView
+                android:id="@+id/setDefaultLauncher"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/menu_item_height"
+                android:gravity="left|center_vertical"
+                android:paddingLeft="20dp"
+                android:text="@string/setting_set_default_launcher"
+                android:textSize="@dimen/menu_item_text_size" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#000000" />
+
+            <TextView
+                android:id="@+id/changeLanguage"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/menu_item_height"
+                android:gravity="left|center_vertical"
+                android:paddingLeft="20dp"
+                android:text="@string/setting_language"
+                android:textSize="@dimen/menu_item_text_size" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#000000" />
+
+            <TextView
+                android:id="@+id/exportConfig"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/menu_item_height"
+                android:gravity="left|center_vertical"
+                android:paddingLeft="20dp"
+                android:text="@string/setting_export_config"
+                android:textSize="@dimen/menu_item_text_size" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#000000" />
+
+            <TextView
+                android:id="@+id/importConfig"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/menu_item_height"
+                android:gravity="left|center_vertical"
+                android:paddingLeft="20dp"
+                android:text="@string/setting_import_config"
+                android:textSize="@dimen/menu_item_text_size" />
 
             <View
                 android:layout_width="match_parent"
@@ -608,36 +762,6 @@
                 android:layout_weight="1"
                 android:minHeight="20dp"
                 android:visibility="gone" />
-
-
-            <LinearLayout
-                android:id="@+id/menu_ftp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center_vertical"
-                android:minHeight="@dimen/menu_item_height"
-                android:orientation="vertical"
-                android:paddingLeft="20dp"
-                android:paddingTop="10dp"
-                android:paddingBottom="10dp">
-
-                <TextView
-                    android:id="@+id/ftp_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/setting_cloud_manager_wifi_off"
-                    android:textSize="@dimen/menu_item_text_size"
-                    tools:text="网络传书 （开）" />
-
-                <TextView
-                    android:id="@+id/ftp_addr"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginRight="4dp"
-                    tools:text="ftp://192.168.123.121" />
-            </LinearLayout>
-
 
 
         </LinearLayout>

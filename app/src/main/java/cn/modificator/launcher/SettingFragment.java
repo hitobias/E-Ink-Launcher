@@ -1,15 +1,8 @@
 package cn.modificator.launcher;
 
 import android.Manifest;
-import android.app.Activity;
-import android.app.Fragment;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -22,18 +15,25 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
 
-import cn.modificator.launcher.ftpservice.FTPService;
+import java.io.File;
+
 import cn.modificator.launcher.model.AppSortComparator;
+import cn.modificator.launcher.model.FontManager;
+import cn.modificator.launcher.model.NotificationCounter;
 import cn.modificator.launcher.model.WifiControl;
 
 /**
- * 设置页面 Fragment。
+ * 设置页面 Fragment（androidx）。
  */
 public class SettingFragment extends Fragment implements View.OnClickListener {
 
-  /** 设置变更回调接口：宿主 Activity 应实现此接口以响应设置变更。 */
   public interface OnSettingChangeListener {
     void onRowNumChanged(int rowNum);
     void onColNumChanged(int colNum);
@@ -43,6 +43,11 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     void onShowStatusBarChanged(boolean show);
     void onShowCustomIconChanged(boolean show);
     void onSortModeChanged(int mode);
+    void onHideSystemAppsChanged(boolean hide);
+    void onReturnNotificationChanged(boolean enabled);
+    void onAutoRefreshChanged(int minutes);
+    void onPinRecentCountChanged(int n);
+    void onNotificationBadgeChanged(boolean enabled);
     void onEnterManageMode();
   }
 
@@ -53,77 +58,196 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
   private Spinner appNameLinesSpinner;
   private Spinner sortModeSpinner;
   private SeekBar fontControl;
-  private View rootView;
   private TextView hideDivider;
-  private TextView ftpAddr;
-  private TextView ftpStatus;
   private TextView showStatusBar;
   private TextView showCustomIcon;
+  private TextView hideSystemApps;
+  private TextView returnNotification;
+  private TextView autoRefreshLabel;
+  private TextView pinRecentLabel;
+  private TextView notificationBadge;
   private Config config;
 
-  @SuppressWarnings("deprecation")
+  private ActivityResultLauncher<String[]> storagePermissionLauncher;
+  private ActivityResultLauncher<String> locationPermissionLauncher;
+  private ActivityResultLauncher<String[]> fontPickerLauncher;
+  private ActivityResultLauncher<Intent> roleHomeLauncher;
+  private ActivityResultLauncher<String> exportConfigLauncher;
+  private ActivityResultLauncher<String[]> importConfigLauncher;
+  private TextView changeFontLabel;
+  private TextView defaultLauncherLabel;
+  private Runnable pendingStorageAction;
+
   @Override
-  public void onAttach(Activity activity) {
-    super.onAttach(activity);
-    if (activity instanceof OnSettingChangeListener) {
-      listener = (OnSettingChangeListener) activity;
+  public void onAttach(@NonNull Context context) {
+    super.onAttach(context);
+    if (context instanceof OnSettingChangeListener) {
+      listener = (OnSettingChangeListener) context;
     } else {
-      throw new ClassCastException(activity.toString() + " must implement OnSettingChangeListener");
+      throw new ClassCastException(context + " must implement OnSettingChangeListener");
     }
   }
 
   @Override
-  public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-    return inflater.inflate(R.layout.activity_setting, null);
+  public void onCreate(@Nullable Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    storagePermissionLauncher = registerForActivityResult(
+        new ActivityResultContracts.RequestMultiplePermissions(),
+        grants -> {
+          Runnable run = pendingStorageAction;
+          pendingStorageAction = null;
+          if (run != null) run.run();
+        });
+    locationPermissionLauncher = registerForActivityResult(
+        new ActivityResultContracts.RequestPermission(),
+        granted -> {
+          WifiControl.reloadWifiName();
+          requireActivity().getOnBackPressedDispatcher().onBackPressed();
+        });
+    fontPickerLauncher = registerForActivityResult(
+        new ActivityResultContracts.OpenDocument(),
+        uri -> {
+          if (uri == null) return;
+          installFont(uri);
+        });
+    roleHomeLauncher = registerForActivityResult(
+        new ActivityResultContracts.StartActivityForResult(),
+        result -> updateDefaultLauncherLabel());
+    exportConfigLauncher = registerForActivityResult(
+        new ActivityResultContracts.CreateDocument("application/json"),
+        uri -> {
+          if (uri != null) doExportConfig(uri);
+        });
+    importConfigLauncher = registerForActivityResult(
+        new ActivityResultContracts.OpenDocument(),
+        uri -> {
+          if (uri != null) doImportConfig(uri);
+        });
+  }
+
+  private void doExportConfig(android.net.Uri uri) {
+    try (java.io.OutputStream out = requireContext().getContentResolver().openOutputStream(uri)) {
+      if (out == null) throw new java.io.IOException("null output stream");
+      ConfigBackup.exportTo(requireContext(), out);
+      Toast.makeText(requireContext(), R.string.config_export_success, Toast.LENGTH_SHORT).show();
+    } catch (Exception e) {
+      Toast.makeText(requireContext(), R.string.config_export_failed, Toast.LENGTH_LONG).show();
+    }
+  }
+
+  private void doImportConfig(android.net.Uri uri) {
+    try (java.io.InputStream in = requireContext().getContentResolver().openInputStream(uri)) {
+      if (in == null) throw new java.io.IOException("null input stream");
+      ConfigBackup.importFrom(requireContext(), in);
+      Toast.makeText(requireContext(), R.string.config_import_success, Toast.LENGTH_SHORT).show();
+      // 重建以便所有缓存字段重新读取
+      requireActivity().recreate();
+    } catch (Exception e) {
+      Toast.makeText(requireContext(), R.string.config_import_failed, Toast.LENGTH_LONG).show();
+    }
+  }
+
+  @Nullable
+  @Override
+  public View onCreateView(@NonNull LayoutInflater inflater,
+                           @Nullable ViewGroup container,
+                           @Nullable Bundle savedInstanceState) {
+    return inflater.inflate(R.layout.activity_setting, container, false);
   }
 
   @Override
-  public void onActivityCreated(Bundle savedInstanceState) {
-    super.onActivityCreated(savedInstanceState);
-    rootView = getView();
-    config = new Config(getActivity());
-    initViews();
+  public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+    super.onViewCreated(view, savedInstanceState);
+    config = new Config(requireContext());
+    initViews(view);
     initSpinners();
     initFontControl();
-    updateFtpStatus();
   }
 
   // =========================================================================
   // 初始化
   // =========================================================================
 
-  private void initViews() {
-    rootView.findViewById(R.id.toBack).setOnClickListener(this);
-    rootView.findViewById(R.id.rootView).setOnClickListener(this);
-    rootView.findViewById(R.id.deleteApp).setOnClickListener(this);
-    rootView.findViewById(R.id.showWifiName).setOnClickListener(this);
-    rootView.findViewById(R.id.btnHideFontControl).setOnClickListener(this);
-    rootView.findViewById(R.id.changeFontSize).setOnClickListener(this);
-    rootView.findViewById(R.id.helpAbout).setOnClickListener(this);
-    rootView.findViewById(R.id.menu_ftp).setOnClickListener(this);
-    rootView.findViewById(R.id.openDeviceManager).setOnClickListener(this);
+  private void initViews(View root) {
+    root.findViewById(R.id.toBack).setOnClickListener(this);
+    root.findViewById(R.id.rootView).setOnClickListener(this);
+    root.findViewById(R.id.deleteApp).setOnClickListener(this);
+    root.findViewById(R.id.showWifiName).setOnClickListener(this);
+    root.findViewById(R.id.btnHideFontControl).setOnClickListener(this);
+    root.findViewById(R.id.changeFontSize).setOnClickListener(this);
+    root.findViewById(R.id.helpAbout).setOnClickListener(this);
+    root.findViewById(R.id.openDeviceManager).setOnClickListener(this);
 
-    showStatusBar = rootView.findViewById(R.id.showStatusBar);
-    showCustomIcon = rootView.findViewById(R.id.showCustomIcon);
-    ftpStatus = rootView.findViewById(R.id.ftp_status);
-    ftpAddr = rootView.findViewById(R.id.ftp_addr);
-    hideDivider = rootView.findViewById(R.id.hideDivider);
-    fontControl = rootView.findViewById(R.id.font_control);
-    colNumSpinner = rootView.findViewById(R.id.col_num_spinner);
-    rowNumSpinner = rootView.findViewById(R.id.row_num_spinner);
-    appNameLinesSpinner = rootView.findViewById(R.id.appNameLine);
-    sortModeSpinner = rootView.findViewById(R.id.sortModeSpinner);
+    showStatusBar = root.findViewById(R.id.showStatusBar);
+    showCustomIcon = root.findViewById(R.id.showCustomIcon);
+    hideSystemApps = root.findViewById(R.id.hideSystemApps);
+    returnNotification = root.findViewById(R.id.returnNotification);
+    autoRefreshLabel = root.findViewById(R.id.autoRefresh);
+    hideDivider = root.findViewById(R.id.hideDivider);
+    fontControl = root.findViewById(R.id.font_control);
+    colNumSpinner = root.findViewById(R.id.col_num_spinner);
+    rowNumSpinner = root.findViewById(R.id.row_num_spinner);
+    appNameLinesSpinner = root.findViewById(R.id.appNameLine);
+    sortModeSpinner = root.findViewById(R.id.sortModeSpinner);
 
     showStatusBar.setOnClickListener(this);
     hideDivider.setOnClickListener(this);
     showCustomIcon.setOnClickListener(this);
 
-    // 初始化 UI 状态
     showStatusBar.getPaint().setStrikeThruText(config.isShowStatusBar());
     hideDivider.getPaint().setStrikeThruText(config.isHideDivider());
-    hideDivider.setText(config.isHideDivider() ? "显示分隔线" : "隐藏分隔线");
+    hideDivider.setText(config.isHideDivider()
+        ? R.string.setting_show_divider
+        : R.string.setting_hide_divider);
     showCustomIcon.getPaint().setStrikeThruText(config.isShowCustomIcon());
+    if (hideSystemApps != null) {
+      hideSystemApps.setOnClickListener(this);
+      hideSystemApps.getPaint().setStrikeThruText(config.isHideSystemApps());
+    }
+    if (returnNotification != null) {
+      returnNotification.setOnClickListener(this);
+      returnNotification.getPaint().setStrikeThruText(!config.isReturnNotificationEnabled());
+    }
+    if (autoRefreshLabel != null) {
+      autoRefreshLabel.setOnClickListener(this);
+      updateAutoRefreshLabel();
+    }
+    pinRecentLabel = root.findViewById(R.id.pinRecent);
+    if (pinRecentLabel != null) {
+      pinRecentLabel.setOnClickListener(this);
+      updatePinRecentLabel();
+    }
+    notificationBadge = root.findViewById(R.id.notificationBadge);
+    if (notificationBadge != null) {
+      notificationBadge.setOnClickListener(this);
+      // 实际生效状态 = 配置开启 && 已授予权限；strikethrough 表示"未启用"。
+      notificationBadge.getPaint().setStrikeThruText(!isNotificationBadgeActive());
+    }
     fontControl.setProgress((int) ((config.getFontSize() - 10) * 10));
+
+    changeFontLabel = root.findViewById(R.id.changeFont);
+    if (changeFontLabel != null) {
+      changeFontLabel.setOnClickListener(this);
+      updateFontLabel();
+    }
+
+    defaultLauncherLabel = root.findViewById(R.id.setDefaultLauncher);
+    if (defaultLauncherLabel != null) {
+      defaultLauncherLabel.setOnClickListener(this);
+      updateDefaultLauncherLabel();
+    }
+
+    View changeLanguage = root.findViewById(R.id.changeLanguage);
+    if (changeLanguage != null) {
+      changeLanguage.setOnClickListener(this);
+    }
+
+    View exportConfig = root.findViewById(R.id.exportConfig);
+    if (exportConfig != null) exportConfig.setOnClickListener(this);
+    View importConfig = root.findViewById(R.id.importConfig);
+    if (importConfig != null) importConfig.setOnClickListener(this);
+    View hiddenAppsManager = root.findViewById(R.id.hiddenAppsManager);
+    if (hiddenAppsManager != null) hiddenAppsManager.setOnClickListener(this);
   }
 
   private void initSpinners() {
@@ -174,10 +298,11 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
       @Override
       public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         if (AppSortComparator.modeNeedsUsageStats(position)
-            && !AppSortComparator.hasUsageStatsPermission(getActivity())) {
-          Toast.makeText(getActivity(), R.string.sort_need_usage_permission, Toast.LENGTH_LONG).show();
-          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            && !AppSortComparator.hasUsageStatsPermission(requireContext())) {
+          Toast.makeText(requireContext(), R.string.sort_need_usage_permission, Toast.LENGTH_LONG).show();
+          try {
             startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS));
+          } catch (Exception ignored) {
           }
           sortModeSpinner.setSelection(config.getSortMode(), false);
           return;
@@ -226,95 +351,382 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
   public void onClick(View v) {
     int id = v.getId();
     if (id == R.id.toBack || id == R.id.rootView) {
-      getActivity().onBackPressed();
+      requireActivity().getOnBackPressedDispatcher().onBackPressed();
     } else if (id == R.id.deleteApp) {
       handleDeleteApp();
     } else if (id == R.id.showStatusBar) {
       handleToggleStatusBar();
     } else if (id == R.id.helpAbout) {
-      AboutDialog.getInstance(getActivity()).show();
+      AboutDialog.getInstance(requireContext()).show();
     } else if (id == R.id.btnHideFontControl) {
-      rootView.findViewById(R.id.menuList).setVisibility(View.VISIBLE);
-      rootView.findViewById(R.id.font_control_p).setVisibility(View.GONE);
+      requireView().findViewById(R.id.menuList).setVisibility(View.VISIBLE);
+      requireView().findViewById(R.id.font_control_p).setVisibility(View.GONE);
     } else if (id == R.id.changeFontSize) {
-      rootView.findViewById(R.id.menuList).setVisibility(View.GONE);
-      rootView.findViewById(R.id.font_control_p).setVisibility(View.VISIBLE);
+      requireView().findViewById(R.id.menuList).setVisibility(View.GONE);
+      requireView().findViewById(R.id.font_control_p).setVisibility(View.VISIBLE);
     } else if (id == R.id.hideDivider) {
       handleToggleDivider();
-    } else if (id == R.id.menu_ftp) {
-      handleFtp();
     } else if (id == R.id.showWifiName) {
       handleShowWifiName();
     } else if (id == R.id.showCustomIcon) {
       handleToggleCustomIcon();
+    } else if (id == R.id.hideSystemApps) {
+      handleToggleHideSystemApps();
+    } else if (id == R.id.returnNotification) {
+      handleToggleReturnNotification();
+    } else if (id == R.id.autoRefresh) {
+      handleAutoRefresh();
+    } else if (id == R.id.pinRecent) {
+      handlePinRecent();
+    } else if (id == R.id.notificationBadge) {
+      handleToggleNotificationBadge();
+    } else if (id == R.id.exportConfig) {
+      exportConfigLauncher.launch("eink-launcher-config.json");
+    } else if (id == R.id.importConfig) {
+      importConfigLauncher.launch(new String[]{"application/json", "*/*"});
+    } else if (id == R.id.hiddenAppsManager) {
+      startActivity(new Intent(requireContext(), HiddenAppsActivity.class));
     } else if (id == R.id.openDeviceManager) {
-      startActivity(new Intent().setComponent(
-          new ComponentName("com.android.settings", "com.android.settings.DeviceAdminSettings")));
+      try {
+        startActivity(new Intent().setComponent(new android.content.ComponentName(
+            "com.android.settings",
+            "com.android.settings.DeviceAdminSettings")));
+      } catch (Exception ignored) {
+      }
+    } else if (id == R.id.changeFont) {
+      handleChangeFont();
+    } else if (id == R.id.setDefaultLauncher) {
+      handleSetDefaultLauncher();
+    } else if (id == R.id.changeLanguage) {
+      handleChangeLanguage();
     }
+  }
+
+  // 语言选项：tag 用于持久化，label 用各自语言显示。
+  private static final String[] LOCALE_TAGS = {
+      "", "zh-CN", "zh-TW", "en", "ko", "pl"
+  };
+  private static final CharSequence[] LOCALE_LABELS = {
+      "跟随系统 / Follow System",
+      "简体中文",
+      "繁體中文",
+      "English",
+      "한국어",
+      "Polski"
+  };
+
+  private void handleChangeLanguage() {
+    String current = config.getLocaleTag();
+    int currentIdx = 0;
+    for (int i = 0; i < LOCALE_TAGS.length; i++) {
+      if (LOCALE_TAGS[i].equals(current)) {
+        currentIdx = i;
+        break;
+      }
+    }
+    new android.app.AlertDialog.Builder(requireContext())
+        .setTitle(R.string.setting_language)
+        .setSingleChoiceItems(LOCALE_LABELS, currentIdx, (dialog, which) -> {
+          dialog.dismiss();
+          String tag = LOCALE_TAGS[which];
+          if (tag.equals(config.getLocaleTag())) return;
+          config.setLocaleTag(tag);
+          LocaleManager.applyToProcess(tag);
+          requireActivity().recreate();
+        })
+        .setNegativeButton(R.string.dialog_cancel, null)
+        .show();
+  }
+
+  private void handleSetDefaultLauncher() {
+    if (LauncherDefaultHelper.isDefaultHome(requireContext())) {
+      Toast.makeText(requireContext(), R.string.setting_is_default_launcher, Toast.LENGTH_SHORT).show();
+      return;
+    }
+    LauncherDefaultHelper.requestDefault(requireActivity(), roleHomeLauncher);
+  }
+
+  private void updateDefaultLauncherLabel() {
+    if (defaultLauncherLabel == null) return;
+    boolean isDefault = LauncherDefaultHelper.isDefaultHome(requireContext());
+    defaultLauncherLabel.setText(isDefault
+        ? R.string.setting_is_default_launcher
+        : R.string.setting_set_default_launcher);
+    defaultLauncherLabel.setEnabled(!isDefault);
+    defaultLauncherLabel.getPaint().setStrikeThruText(isDefault);
+  }
+
+  private void handleChangeFont() {
+    String current = config.getFontPath();
+    if (current != null) {
+      new android.app.AlertDialog.Builder(requireContext())
+          .setTitle(R.string.setting_set_font)
+          .setItems(new CharSequence[]{
+              getString(R.string.setting_set_font),
+              getString(R.string.setting_clear_font)
+          }, (d, which) -> {
+            if (which == 0) launchPicker();
+            else clearFont();
+          })
+          .setNegativeButton(R.string.dialog_cancel, null)
+          .show();
+    } else {
+      launchPicker();
+    }
+  }
+
+  private void launchPicker() {
+    try {
+      fontPickerLauncher.launch(new String[]{
+          "font/ttf", "font/otf", "application/font-sfnt",
+          "application/x-font-ttf", "application/x-font-otf",
+          "application/octet-stream", "*/*"
+      });
+    } catch (Exception e) {
+      Toast.makeText(requireContext(), R.string.font_load_failed, Toast.LENGTH_SHORT).show();
+    }
+  }
+
+  private void clearFont() {
+    config.clearFontPath();
+    FontManager.clear();
+    File installed = new File(requireContext().getFilesDir(), "fonts/custom.ttf");
+    if (installed.exists()) installed.delete();
+    updateFontLabel();
+  }
+
+  private void installFont(android.net.Uri uri) {
+    File fontsDir = new File(requireContext().getFilesDir(), "fonts");
+    if (!fontsDir.exists() && !fontsDir.mkdirs()) {
+      Toast.makeText(requireContext(), R.string.font_load_failed, Toast.LENGTH_SHORT).show();
+      return;
+    }
+    File dst = new File(fontsDir, "custom.ttf");
+    try (java.io.InputStream in = requireContext().getContentResolver().openInputStream(uri);
+         java.io.OutputStream out = new java.io.FileOutputStream(dst)) {
+      if (in == null) throw new java.io.IOException("null input stream");
+      byte[] buf = new byte[8192];
+      int n;
+      while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+    } catch (Exception e) {
+      Toast.makeText(requireContext(), R.string.font_load_failed, Toast.LENGTH_LONG).show();
+      return;
+    }
+    if (FontManager.load(dst)) {
+      config.setFontPath(dst.getAbsolutePath());
+      updateFontLabel();
+    } else {
+      dst.delete();
+      Toast.makeText(requireContext(), R.string.font_load_failed, Toast.LENGTH_LONG).show();
+    }
+  }
+
+  private void updateFontLabel() {
+    if (changeFontLabel == null) return;
+    changeFontLabel.setText(config.getFontPath() != null
+        ? R.string.setting_set_font
+        : R.string.setting_set_font);
   }
 
   private void handleDeleteApp() {
     listener.onEnterManageMode();
-    getActivity().onBackPressed();
+    requireActivity().getOnBackPressedDispatcher().onBackPressed();
   }
 
   private void handleToggleStatusBar() {
     boolean newValue = !config.isShowStatusBar();
     config.setShowStatusBar(newValue);
     listener.onShowStatusBarChanged(newValue);
-    getActivity().onBackPressed();
+    requireActivity().getOnBackPressedDispatcher().onBackPressed();
   }
 
   private void handleToggleDivider() {
     boolean newValue = !config.isHideDivider();
     config.setHideDivider(newValue);
-    hideDivider.setText(newValue ? "显示分隔线" : "隐藏分隔线");
+    hideDivider.setText(newValue ? R.string.setting_show_divider : R.string.setting_hide_divider);
     listener.onHideDividerChanged(newValue);
-    getActivity().onBackPressed();
-  }
-
-  private void handleFtp() {
-    Utils.checkStoragePermission(getActivity(), new Runnable() {
-      @Override
-      public void run() {
-        if (!FTPService.isRunning()) {
-          if (FTPService.isConnectedToWifi(getActivity())) {
-            startFtpServer();
-          } else {
-            Toast.makeText(getActivity(), "大哥诶，麻烦先把WIFI连上吧", Toast.LENGTH_SHORT).show();
-          }
-        } else {
-          stopFtpServer();
-        }
-      }
-    });
+    requireActivity().getOnBackPressedDispatcher().onBackPressed();
   }
 
   private void handleShowWifiName() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 10002);
+      locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+    } else {
+      WifiControl.reloadWifiName();
+      requireActivity().getOnBackPressedDispatcher().onBackPressed();
     }
   }
 
   private void handleToggleCustomIcon() {
-    Utils.checkStoragePermission(getActivity(), new Runnable() {
-      @Override
-      public void run() {
-        boolean newValue = !config.isShowCustomIcon();
-        config.setShowCustomIcon(newValue);
-        listener.onShowCustomIconChanged(newValue);
-        getActivity().onBackPressed();
-      }
+    withStoragePermission(() -> {
+      boolean newValue = !config.isShowCustomIcon();
+      config.setShowCustomIcon(newValue);
+      listener.onShowCustomIconChanged(newValue);
+      requireActivity().getOnBackPressedDispatcher().onBackPressed();
     });
   }
 
-  @Override
-  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    if (requestCode == 10002) {
-      WifiControl.reloadWifiName();
-      getActivity().onBackPressed();
+  private void handleToggleHideSystemApps() {
+    boolean newValue = !config.isHideSystemApps();
+    config.setHideSystemApps(newValue);
+    if (hideSystemApps != null) {
+      hideSystemApps.getPaint().setStrikeThruText(newValue);
+      hideSystemApps.invalidate();
     }
+    listener.onHideSystemAppsChanged(newValue);
+  }
+
+  private void handleToggleReturnNotification() {
+    boolean newValue = !config.isReturnNotificationEnabled();
+    config.setReturnNotificationEnabled(newValue);
+    if (returnNotification != null) {
+      returnNotification.getPaint().setStrikeThruText(!newValue);
+      returnNotification.invalidate();
+    }
+    listener.onReturnNotificationChanged(newValue);
+  }
+
+  // 选项：关闭 / 5 / 10 / 30 分钟 — 对应 setting_auto_refresh_options 数组。
+  private static final int[] AUTO_REFRESH_VALUES = {0, 5, 10, 30};
+
+  private void handleAutoRefresh() {
+    CharSequence[] labels = new CharSequence[]{
+        getString(R.string.setting_auto_refresh_off),
+        "5 " + getString(R.string.unit_minute),
+        "10 " + getString(R.string.unit_minute),
+        "30 " + getString(R.string.unit_minute),
+    };
+    int current = config.getAutoRefreshMinutes();
+    int currentIdx = 0;
+    for (int i = 0; i < AUTO_REFRESH_VALUES.length; i++) {
+      if (AUTO_REFRESH_VALUES[i] == current) {
+        currentIdx = i;
+        break;
+      }
+    }
+    new android.app.AlertDialog.Builder(requireContext())
+        .setTitle(R.string.setting_auto_refresh)
+        .setSingleChoiceItems(labels, currentIdx, (dialog, which) -> {
+          dialog.dismiss();
+          int chosen = AUTO_REFRESH_VALUES[which];
+          config.setAutoRefreshMinutes(chosen);
+          updateAutoRefreshLabel();
+          listener.onAutoRefreshChanged(chosen);
+        })
+        .setNegativeButton(R.string.dialog_cancel, null)
+        .show();
+  }
+
+  private void updateAutoRefreshLabel() {
+    if (autoRefreshLabel == null) return;
+    int min = config.getAutoRefreshMinutes();
+    String value = min == 0
+        ? getString(R.string.setting_auto_refresh_off)
+        : min + " " + getString(R.string.unit_minute);
+    autoRefreshLabel.setText(getString(R.string.setting_auto_refresh) + ": " + value);
+  }
+
+  private static final int[] PIN_RECENT_VALUES = {0, 3, 5, 8};
+
+  private void handlePinRecent() {
+    // 需要 PACKAGE_USAGE_STATS 权限 —— 复用排序模式的检查逻辑。
+    if (!cn.modificator.launcher.model.AppSortComparator.hasUsageStatsPermission(requireContext())) {
+      Toast.makeText(requireContext(), R.string.sort_need_usage_permission, Toast.LENGTH_LONG).show();
+      try {
+        startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS));
+      } catch (Exception ignored) {
+      }
+      return;
+    }
+    CharSequence[] labels = new CharSequence[]{
+        getString(R.string.setting_pin_recent_off),
+        "3", "5", "8"
+    };
+    int current = config.getPinRecentCount();
+    int currentIdx = 0;
+    for (int i = 0; i < PIN_RECENT_VALUES.length; i++) {
+      if (PIN_RECENT_VALUES[i] == current) {
+        currentIdx = i;
+        break;
+      }
+    }
+    new android.app.AlertDialog.Builder(requireContext())
+        .setTitle(R.string.setting_pin_recent)
+        .setSingleChoiceItems(labels, currentIdx, (dialog, which) -> {
+          dialog.dismiss();
+          int chosen = PIN_RECENT_VALUES[which];
+          config.setPinRecentCount(chosen);
+          updatePinRecentLabel();
+          listener.onPinRecentCountChanged(chosen);
+        })
+        .setNegativeButton(R.string.dialog_cancel, null)
+        .show();
+  }
+
+  private void updatePinRecentLabel() {
+    if (pinRecentLabel == null) return;
+    int n = config.getPinRecentCount();
+    String value = n == 0 ? getString(R.string.setting_pin_recent_off) : String.valueOf(n);
+    pinRecentLabel.setText(getString(R.string.setting_pin_recent) + ": " + value);
+  }
+
+  /** 通知角标是否真正生效：配置启用 + 系统已授予通知访问权限。 */
+  private boolean isNotificationBadgeActive() {
+    return config.isNotificationBadgeEnabled()
+        && NotificationCounter.hasAccess(requireContext());
+  }
+
+  private void updateNotificationBadgeLabel() {
+    if (notificationBadge == null) return;
+    notificationBadge.getPaint().setStrikeThruText(!isNotificationBadgeActive());
+    notificationBadge.invalidate();
+  }
+
+  private void handleToggleNotificationBadge() {
+    boolean current = config.isNotificationBadgeEnabled();
+    boolean newValue = !current;
+    if (newValue && !NotificationCounter.hasAccess(requireContext())) {
+      // 首次启用且权限未授予：提示并跳转系统设置；不修改 config
+      Toast.makeText(requireContext(),
+          R.string.notification_badge_need_access, Toast.LENGTH_LONG).show();
+      try {
+        startActivity(NotificationCounter.buildSettingsIntent());
+      } catch (Exception ignored) {
+      }
+      // 不立即落盘 newValue —— 等用户从设置页回来后下次再点会真正开启；
+      // 这样可以避免"开关说开了但其实没权限"的状态错乱。
+      return;
+    }
+    config.setNotificationBadgeEnabled(newValue);
+    // 不动 component 启停状态 —— 让系统的 NotificationListener 始终可用，
+    // 仅用 config 控制 UI 是否绘制角标。这样关闭后再开启不必重新授权。
+    updateNotificationBadgeLabel();
+    listener.onNotificationBadgeChanged(newValue);
+  }
+
+  /**
+   * 在最新平台上请求合适的存储/媒体权限，授权后执行回调。
+   */
+  private void withStoragePermission(Runnable next) {
+    String required = pickStoragePermission();
+    if (required == null
+        || ContextCompat.checkSelfPermission(requireContext(), required)
+        == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+      next.run();
+      return;
+    }
+    pendingStorageAction = next;
+    storagePermissionLauncher.launch(new String[]{required});
+  }
+
+  private String pickStoragePermission() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      return Manifest.permission.READ_MEDIA_IMAGES;
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      return Manifest.permission.READ_EXTERNAL_STORAGE;
+    }
+    return null;
   }
 
   // =========================================================================
@@ -324,86 +736,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
   @Override
   public void onResume() {
     super.onResume();
-    updateFtpStatus();
-
-    IntentFilter wifiFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-    Utils.registerReceiverCompat(getActivity(), wifiReceiver, wifiFilter);
-
-    IntentFilter ftpFilter = new IntentFilter();
-    ftpFilter.addAction(FTPService.ACTION_STARTED);
-    ftpFilter.addAction(FTPService.ACTION_STOPPED);
-    ftpFilter.addAction(FTPService.ACTION_FAILEDTOSTART);
-    Utils.registerReceiverCompat(getActivity(), ftpReceiver, ftpFilter);
+    updateDefaultLauncherLabel();
+    updateNotificationBadgeLabel();
   }
-
-  @Override
-  public void onPause() {
-    super.onPause();
-    getActivity().unregisterReceiver(wifiReceiver);
-    getActivity().unregisterReceiver(ftpReceiver);
-  }
-
-  // =========================================================================
-  // FTP 控制
-  // =========================================================================
-
-  private void startFtpServer() {
-    getActivity().sendBroadcast(new Intent(FTPService.ACTION_START_FTPSERVER));
-  }
-
-  private void stopFtpServer() {
-    getActivity().sendBroadcast(new Intent(FTPService.ACTION_STOP_FTPSERVER));
-  }
-
-  private void updateFtpStatus() {
-    if (FTPService.isConnectedToWifi(getActivity())) {
-      if (FTPService.isRunning()) {
-        ftpStatus.setText(R.string.setting_cloud_manager_on);
-        ftpAddr.setVisibility(View.VISIBLE);
-        String address = getFTPAddressString();
-        if (address != null) {
-          ftpAddr.setText(address);
-        } else {
-          ftpAddr.setVisibility(View.GONE);
-        }
-      } else {
-        ftpStatus.setText(R.string.setting_cloud_manager_off);
-        ftpAddr.setVisibility(View.GONE);
-      }
-    } else {
-      ftpStatus.setText(R.string.setting_cloud_manager_wifi_off);
-      ftpAddr.setVisibility(View.GONE);
-    }
-  }
-
-  private String getFTPAddressString() {
-    if (FTPService.getLocalInetAddress(getActivity()) == null) {
-      return null;
-    }
-    return "ftp://" + FTPService.getLocalInetAddress(getActivity()).getHostAddress()
-        + ":" + FTPService.getPort();
-  }
-
-  // =========================================================================
-  // 广播接收器
-  // =========================================================================
-
-  private final BroadcastReceiver wifiReceiver = new BroadcastReceiver() {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-      ConnectivityManager conMan = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-      NetworkInfo netInfo = conMan.getActiveNetworkInfo();
-      if (netInfo == null || netInfo.getType() != ConnectivityManager.TYPE_WIFI) {
-        stopFtpServer();
-      }
-      updateFtpStatus();
-    }
-  };
-
-  private final BroadcastReceiver ftpReceiver = new BroadcastReceiver() {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-      updateFtpStatus();
-    }
-  };
 }

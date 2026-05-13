@@ -1,30 +1,45 @@
 package cn.modificator.launcher.model;
 
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.LruCache;
+import android.widget.ImageView;
 
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * 应用图标、标签的内存缓存，以及自定义图标替换映射管理。
- * <ul>
- *   <li>{@link #getIcon} / {@link #getLabel} —— 带缓存的图标 / 标签加载</li>
- *   <li>{@link #refreshCustomIcons} —— 扫描外部存储中的自定义图标文件</li>
- *   <li>{@link #markDirty()} —— 标记需要重新扫描文件系统</li>
- *   <li>{@link #clearAppCache()} —— 应用安装/卸载后清除缓存</li>
- * </ul>
+ * <p>
+ * 自定义图标查找顺序：
+ * <ol>
+ *   <li>App 专属外部目录 {@code <files>/Documents/E-Ink Launcher/icon}
+ *       —— Android 10+ 推荐位置，无需权限</li>
+ *   <li>公共 Documents 目录（旧版兼容）</li>
+ * </ol>
  */
 public class IconCache {
 
-  private static final String ICON_DIR = "E-Ink Launcher" + File.separator + "icon";
+  private static final String ICON_DIR_REL = "E-Ink Launcher" + File.separator + "icon";
 
-  private final Map<String, Drawable> drawableCache = new HashMap<>();
-  private final Map<String, CharSequence> labelCache = new HashMap<>();
+  private final LruCache<String, Drawable> drawableCache = new LruCache<>(150);
+  private final LruCache<String, CharSequence> labelCache = new LruCache<>(300);
+  private final ExecutorService loadExecutor =
+      Executors.newFixedThreadPool(2, r -> {
+        Thread t = new Thread(r, "IconLoader");
+        t.setDaemon(true);
+        return t;
+      });
+  private final Handler mainHandler = new Handler(Looper.getMainLooper());
   private final Map<String, File> customIconMap = new HashMap<>();
   private boolean dirty = true;
 
@@ -32,57 +47,85 @@ public class IconCache {
   // 自定义图标
   // =========================================================================
 
-  /** 标记自定义图标映射为脏，下次 {@link #refreshCustomIcons} 时重新扫描 */
   public void markDirty() {
     dirty = true;
   }
 
   /**
-   * 如有必要，重新扫描外部存储中的自定义图标目录。
+   * 如有必要，重新扫描自定义图标目录。
    *
-   * @param hasExternalStorage 外部存储是否可用
-   * @param showCustomIcon     用户是否启用"显示自定义图标"（true 表示禁用替换）
+   * @param context        用于解析 app 专属外部目录的上下文（可为 null，退回到公共目录）
+   * @param showCustomIcon 用户是否启用"显示自定义图标"（true 表示禁用替换）
    * @return true 表示执行了实际扫描
    */
-  public boolean refreshCustomIcons(boolean hasExternalStorage, boolean showCustomIcon) {
+  public boolean refreshCustomIcons(Context context, boolean showCustomIcon) {
     if (!dirty) return false;
     customIconMap.clear();
 
-    if (hasExternalStorage && !showCustomIcon) {
-      File root = getIconDirectory();
-      if (!root.exists()) {
-        try {
-          root.mkdirs();
-        } catch (Exception ignored) {
-        }
-      }
-      File[] files = root.listFiles();
-      if (files != null) {
-        for (File file : files) {
-          String name = file.getName();
-          int dot = name.lastIndexOf('.');
-          customIconMap.put(dot > 0 ? name.substring(0, dot) : name, file);
-        }
-      }
+    if (!showCustomIcon) {
+      File appScoped = getAppScopedIconDirectory(context);
+      File publicDir = getPublicIconDirectory();
+      scanInto(appScoped);
+      scanInto(publicDir);
     }
     dirty = false;
     return true;
   }
 
-  private static File getIconDirectory() {
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
-      return new File(
-          Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), ICON_DIR);
-    }
-    return new File(Environment.getExternalStorageDirectory(), ICON_DIR);
+  /** 旧签名重载，保留 API 兼容。 */
+  public boolean refreshCustomIcons(boolean hasExternalStorage, boolean showCustomIcon) {
+    return refreshCustomIcons(null, showCustomIcon);
   }
 
-  /** 获取指定包名的自定义图标文件，不存在时返回 null */
+  private void scanInto(File dir) {
+    if (dir == null) return;
+    if (!dir.exists()) {
+      try {
+        if (!dir.mkdirs()) return;
+      } catch (Exception ignored) {
+        return;
+      }
+    }
+    File[] files = dir.listFiles();
+    if (files == null) return;
+    for (File file : files) {
+      if (!file.isFile()) continue;
+      String name = file.getName();
+      int dot = name.lastIndexOf('.');
+      if (dot <= 0) continue;
+      String ext = name.substring(dot + 1).toLowerCase(java.util.Locale.ROOT);
+      // 仅接受常见图片格式，防止用户把任意文件丢进目录导致解码崩溃。
+      if (!"png".equals(ext) && !"jpg".equals(ext) && !"jpeg".equals(ext)
+          && !"webp".equals(ext) && !"bmp".equals(ext)) {
+        continue;
+      }
+      String key = name.substring(0, dot);
+      if (!customIconMap.containsKey(key)) {
+        customIconMap.put(key, file);
+      }
+    }
+  }
+
+  private static File getAppScopedIconDirectory(Context context) {
+    if (context == null) return null;
+    File base = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+    return base != null ? new File(base, ICON_DIR_REL) : null;
+  }
+
+  private static File getPublicIconDirectory() {
+    try {
+      return new File(
+          Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
+          ICON_DIR_REL);
+    } catch (Exception ignored) {
+      return null;
+    }
+  }
+
   public File getCustomIcon(String packageName) {
     return customIconMap.get(packageName);
   }
 
-  /** 获取完整的自定义图标映射（包名 → 文件），供 WifiControl 使用 */
   public Map<String, File> getCustomIconMap() {
     return Collections.unmodifiableMap(customIconMap);
   }
@@ -91,29 +134,51 @@ public class IconCache {
   // 应用图标 & 标签缓存
   // =========================================================================
 
-  /** 带缓存的图标加载 */
   public Drawable getIcon(String packageName, ResolveInfo info, PackageManager pm) {
     Drawable cached = drawableCache.get(packageName);
-    if (cached == null) {
-      cached = info.loadIcon(pm);
-      drawableCache.put(packageName, cached);
-    }
-    return cached;
+    if (cached != null) return cached;
+    Drawable d = info.loadIcon(pm);
+    if (d != null) drawableCache.put(packageName, d);
+    return d;
   }
 
-  /** 带缓存的标签加载 */
   public CharSequence getLabel(String packageName, ResolveInfo info, PackageManager pm) {
     CharSequence cached = labelCache.get(packageName);
-    if (cached == null) {
-      cached = info.loadLabel(pm);
-      labelCache.put(packageName, cached);
-    }
-    return cached;
+    if (cached != null) return cached;
+    CharSequence l = info.loadLabel(pm);
+    labelCache.put(packageName, l);
+    return l;
   }
 
-  /** 清除图标和标签缓存（应用安装/卸载时调用） */
   public void clearAppCache() {
-    drawableCache.clear();
-    labelCache.clear();
+    drawableCache.evictAll();
+    labelCache.evictAll();
+  }
+
+  /** Convenience for binders: load icon into ImageView asynchronously with recycle guard. */
+  public void loadIconInto(ImageView target, String packageName, ResolveInfo info,
+                           PackageManager pm, Object expectedTag) {
+    Drawable cached = drawableCache.get(packageName);
+    if (cached != null) {
+      target.setImageDrawable(cached);
+      return;
+    }
+    target.setImageDrawable(null);
+    loadExecutor.execute(() -> {
+      Drawable d;
+      try {
+        d = info.loadIcon(pm);
+      } catch (Exception e) {
+        d = null;
+      }
+      if (d == null) return;
+      drawableCache.put(packageName, d);
+      final Drawable result = d;
+      mainHandler.post(() -> {
+        if (target.getTag() == expectedTag) {
+          target.setImageDrawable(result);
+        }
+      });
+    });
   }
 }

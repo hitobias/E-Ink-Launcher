@@ -18,9 +18,6 @@
     <string name="type_word">Document</string>
     <string name="type_apk">APK</string>
 
-    <string name="setting_cloud_manager_on">Cloud Manager - ON</string>
-    <string name="setting_cloud_manager_off">Cloud Manager - OFF</string>
-    <string name="setting_cloud_manager_wifi_off">Cloud Manager\n -- No WIFI connect</string>
     <string name="battery_status_low_battery">Low power</string>
     <string name="setting_show_divider">Show Divider</string>
     <string name="setting_hide_divider">Hide Divider</string>
@@ -29,7 +26,6 @@
     <string name="setting_open_device_manager">Open Device Manager</string>
     <string name="setting_column_icons">Column</string>
     <string name="setting_row_icons">"   Row   "</string>
-    <string name="toast_need_wifi_connnect">Please connect Wlan!</string>
     <string name="app_manager_finish">Done</string>
     <string name="battery_heat">Battery Overheat</string>
     <string name="battery_unknown">Unknown</string>
@@ -52,6 +48,17 @@
     <string name="wifi_status_connecting">WiFi connecting</string>
     <string name="wifi_status_disconnected">WiFi disconnected</string>
     <string name="wifi_status_disconnecting">WiFi disconnecting</string>
+
+    <string name="bt_status_off">Bluetooth OFF</string>
+    <string name="bt_status_on">Bluetooth ON</string>
+    <string name="bt_status_opening">Bluetooth opening</string>
+    <string name="bt_status_closing">Bluetooth closing</string>
+    <string name="bt_quick_connect">Quick Connect</string>
+    <string name="bt_open_settings">Bluetooth Settings</string>
+    <string name="bt_no_paired">No paired devices</string>
+    <string name="bt_connecting">Connecting…</string>
+    <string name="bt_connect_failed">Connect failed; opening Bluetooth settings</string>
+    <string name="search_apps_hint">Search apps…</string>
 
     <string name="item_lockscreen">Lock Screen</string>
     <string name="launch_failed">Launch failed</string>
@@ -79,4 +86,58 @@
     <string name="app_show_name">App name</string>
     <string name="setting_sort_mode">Sort</string>
     <string name="sort_need_usage_permission">Please grant usage access permission for this sort mode</string>
+    <string name="setting_set_font">Change Font</string>
+    <string name="setting_clear_font">Reset to System Font</string>
+    <string name="font_load_failed">Font file invalid or unsupported</string>
+    <string name="setting_set_default_launcher">Set as Default Launcher</string>
+    <string name="setting_is_default_launcher">✓ Already Default Launcher</string>
+    <string name="setting_language">Language</string>
+    <string name="setting_hide_system_apps">Hide System Apps</string>
+    <string name="setting_return_notification">Show Return-to-Launcher Notification</string>
+    <string name="setting_notification_badge">Notification Badges</string>
+    <string name="notification_badge_need_access">Grant Notification Access in system settings first</string>
+    <string name="setting_auto_refresh">Auto Refresh Screen</string>
+    <string name="setting_auto_refresh_off">Off</string>
+    <string name="unit_minute">min</string>
+    <string name="setting_pin_recent">Pin Recent Apps</string>
+    <string name="setting_pin_recent_off">Off</string>
+    <string name="setting_export_config">Export Settings</string>
+    <string name="setting_import_config">Import Settings</string>
+    <string name="config_export_success">Settings exported</string>
+    <string name="config_export_failed">Export failed</string>
+    <string name="config_import_success">Settings imported</string>
+    <string name="config_import_failed">Import failed: invalid file</string>
+
+    <string name="shortcut_lock">Lock</string>
+    <string name="shortcut_lock_long">Lock screen</string>
+    <string name="shortcut_search">Search</string>
+    <string name="shortcut_search_long">Search apps</string>
+    <string name="shortcut_settings">Settings</string>
+    <string name="shortcut_settings_long">Launcher settings</string>
+
+    <string name="app_action_app_info">App Info</string>
+    <string name="app_action_hide">Hide</string>
+    <string name="app_action_copy_pkg">Copy Package Name</string>
+    <string name="app_action_force_stop">Force Stop (via App Info)</string>
+    <string name="app_action_uninstall">Uninstall</string>
+    <string name="toast_copied">Copied</string>
+    <string name="app_usage_today_summary">Today: %1$d launches · %2$s</string>
+    <string name="app_usage_total_summary">Total (90d): %1$s</string>
+
+    <string name="folder_add_to">Add to folder…</string>
+    <string name="folder_new">New folder</string>
+    <string name="folder_rename">Rename</string>
+    <string name="folder_dissolve">Dissolve</string>
+    <string name="folder_default_name">Folder</string>
+    <string name="folder_name_hint">Folder name</string>
+
+    <string name="setting_hidden_apps_manager">Hidden Apps Manager</string>
+    <string name="hidden_restore_all">Restore All</string>
+    <string name="hidden_no_apps">No hidden apps</string>
+    <string name="hidden_restored">Restored</string>
+    <string name="hidden_restored_all">All restored</string>
+
+    <string name="about_author_info">Original Author: Modificator\nEmail: yunshangcn@gmail.com\nFork maintained for personal use.</string>
+    <string name="about_thanks">Thanks:\nMaciej Haudek &lt;kontakt@haudek.com&gt;</string>
+    <string name="about_description">E-Ink Launcher — a minimal launcher optimized for e-ink readers.\n\nFeatures:\n• App grid with adjustable density\n• Hide / sort apps\n• Lock screen and Wi-Fi / Bluetooth shortcuts\n• Custom icons (drop PNGs into Documents/E-Ink Launcher/icon)\n• Custom font and force language override</string>
 </resources>

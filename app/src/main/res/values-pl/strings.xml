@@ -19,9 +19,6 @@
     <string name="type_word">Dokument</string>
     <string name="type_apk">APK</string>
 
-    <string name="setting_cloud_manager_on">Menedżer chmury - wł.</string>
-    <string name="setting_cloud_manager_off">Menedżer chmury - wył.</string>
-    <string name="setting_cloud_manager_wifi_off">Menedżer chmury\n -- Brak WIFI</string>
     <string name="battery_status_low_battery">Słaba bateria</string>
     <string name="setting_show_divider">Pokaż siatkę</string>
     <string name="setting_hide_divider">Ukryj siatkę</string>
@@ -29,7 +26,6 @@
     <string name="setting_apps_manager">Zarządzanie aplikacjami</string>
     <string name="setting_column_icons">Kolumny</string>
     <string name="setting_row_icons">" Wiersze "</string>
-    <string name="toast_need_wifi_connnect">Proszę włączyć Wlan!</string>
     <string name="app_manager_finish">Gotowe</string>
     <string name="battery_heat">Przegrzanie baterii</string>
     <string name="battery_unknown">Nieznany</string>

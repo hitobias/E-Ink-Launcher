@@ -11,5 +11,9 @@ projectFilesBackup
 /.idea/sonarlint/issuestore
 .idea
 config.gradle
-KeyStore.key
 release/output.json
+
+# Signing — never commit these
+keystore.properties
+*.keystore
+*.jks

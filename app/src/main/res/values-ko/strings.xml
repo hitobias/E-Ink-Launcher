@@ -24,20 +24,13 @@
     <string name="parent_folder">상위 폴더</string>
     <string name="path">경로</string>
     <string name="power_title">기기 종료</string>
-    <string name="setting_apps_manager">앱 관리자</string>
-    <string name="setting_cloud_manager_off">클라우드 관리자 - 꺼짐</string>
-    <string name="setting_cloud_manager_on">클라우드 관리자 - 켜짐</string>
-    <string name="setting_cloud_manager_wifi_off">"클라우드 관리자
- &#8212; WiFi 연결 없음"</string>
-    <string name="setting_column_icons">열</string>
+    <string name="setting_apps_manager">앱 관리자</string>    <string name="setting_column_icons">열</string>
     <string name="setting_help_and_about">도움말 &amp; 정보</string>
     <string name="setting_hide_divider">구분선 숨김</string>
     <string name="setting_row_icons">"   행   "</string>
     <string name="setting_set_font_size">폰트 크기 설정</string>
     <string name="setting_show_divider">구분선 표시</string>
-    <string name="start_path_name">기기</string>
-    <string name="toast_need_wifi_connnect">WiFi 연결이 필요합니다!</string>
-    <string name="type_apk">APK</string>
+    <string name="start_path_name">기기</string>    <string name="type_apk">APK</string>
     <string name="type_archive">압축 파일</string>
     <string name="type_certificate">인증서</string>
     <string name="type_directory">디렉토리</string>

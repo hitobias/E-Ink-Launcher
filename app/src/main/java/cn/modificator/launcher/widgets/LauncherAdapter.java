@@ -9,7 +9,6 @@ import android.widget.ImageView;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Observer;
 
 import cn.modificator.launcher.R;
 import cn.modificator.launcher.model.ObservableFloat;
@@ -115,11 +114,48 @@ public class LauncherAdapter {
 
   /** 设置当前页要显示的应用列表，自动触发重新绑定 */
   public void setAppList(List<android.content.pm.ResolveInfo> appList) {
+    java.util.Set<Integer> changed = computeChanged(dataList, appList);
     dataList.clear();
     dataList.addAll(appList);
-    if (attachedView != null) {
+    if (attachedView == null) return;
+    // If more than half of visible slots changed, full rebind is cheaper than per-cell.
+    int totalSlots = holders.size();
+    if (totalSlots > 0 && changed.size() * 2 >= totalSlots) {
       attachedView.rebind();
+    } else if (!changed.isEmpty()) {
+      rebindOnly(changed);
+    } else {
+      // No content changes — but viewholder layout may still need to apply (e.g., when first attached).
+      // Use full rebind only if no holder has been bound yet (heuristic: tag null).
+      if (holders.isEmpty() || holders.get(0).itemView.getTag() == null) {
+        attachedView.rebind();
+      }
     }
+  }
+
+  private static java.util.Set<Integer> computeChanged(
+      List<android.content.pm.ResolveInfo> oldList,
+      List<android.content.pm.ResolveInfo> newList) {
+    java.util.Set<Integer> changed = new java.util.HashSet<>();
+    int max = Math.max(oldList.size(), newList.size());
+    for (int i = 0; i < max; i++) {
+      String oldKey = i < oldList.size() ? key(oldList.get(i)) : null;
+      String newKey = i < newList.size() ? key(newList.get(i)) : null;
+      if (oldKey == null ? newKey != null : !oldKey.equals(newKey)) {
+        changed.add(i);
+      }
+    }
+    return changed;
+  }
+
+  private static String key(android.content.pm.ResolveInfo info) {
+    if (info == null || info.activityInfo == null) return "?";
+    return info.activityInfo.packageName + "/" + info.activityInfo.name;
+  }
+
+  /** 仅重新绑定指定位置（包级可见，用于增量更新） */
+  void rebindOnly(java.util.Set<Integer> positions) {
+    if (binder != null) binder.bindOnly(holders, dataList, positions);
   }
 
   /** 仅刷新显示（自定义图标变更后调用） */
@@ -156,7 +192,7 @@ public class LauncherAdapter {
     ItemViewHolder holder = new ItemViewHolder(itemView);
     holders.add(holder);
 
-    fontSizeObservable.addObserver((Observer) holder.appName);
+    fontSizeObservable.addListener(holder.appName);
     holder.appName.setTextSize(TypedValue.COMPLEX_UNIT_SP, fontSize);
     holder.appName.setMinLines(appNameLines == 2 ? appNameLines : 0);
     holder.appName.setMaxLines(appNameLines);
@@ -167,7 +203,7 @@ public class LauncherAdapter {
 
   /** 清除所有 ViewHolder 并取消字体观察 */
   void clearHolders() {
-    fontSizeObservable.deleteObservers();
+    fontSizeObservable.clearListeners();
     holders.clear();
   }
 

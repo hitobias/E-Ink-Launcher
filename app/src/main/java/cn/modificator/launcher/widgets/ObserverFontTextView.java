@@ -1,23 +1,23 @@
 package cn.modificator.launcher.widgets;
 
 import android.content.Context;
-
-import androidx.annotation.Nullable;
-
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.widget.TextView;
 
-import java.util.Observable;
-import java.util.Observer;
+import androidx.annotation.Nullable;
+
+import cn.modificator.launcher.model.FontManager;
+import cn.modificator.launcher.model.ObservableFloat;
 
 /**
- * Created by Modificator
- * time: 16/12/3.上午2:03
- * des:create file and achieve model
+ * 监听 {@link ObservableFloat} 字体大小变化并实时更新自身。
+ * 同时监听 {@link FontManager} 字体变化。
  */
+public class ObserverFontTextView extends TextView
+    implements ObservableFloat.Listener, FontManager.TypefaceListener {
 
-public class ObserverFontTextView extends TextView implements Observer {
   public ObserverFontTextView(Context context) {
     super(context);
   }
@@ -31,8 +31,25 @@ public class ObserverFontTextView extends TextView implements Observer {
   }
 
   @Override
-  public void update(Observable o, Object arg) {
-    setTextSize(TypedValue.COMPLEX_UNIT_SP, (Float) arg);
-//    requestLayout();
+  public void onValueChanged(float value) {
+    setTextSize(TypedValue.COMPLEX_UNIT_SP, value);
+  }
+
+  @Override
+  protected void onAttachedToWindow() {
+    super.onAttachedToWindow();
+    setTypeface(FontManager.get());
+    FontManager.addListener(this);
+  }
+
+  @Override
+  protected void onDetachedFromWindow() {
+    FontManager.removeListener(this);
+    super.onDetachedFromWindow();
+  }
+
+  @Override
+  public void onTypefaceChanged(Typeface typeface) {
+    setTypeface(typeface);
   }
 }

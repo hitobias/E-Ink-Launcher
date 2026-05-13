@@ -9,14 +9,19 @@ import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.View;
 
+import java.util.Locale;
+
 /**
  * 圆形电量指示 View。
  * 外圈弧线表示当前电量百分比，中心显示数字。
  */
 public class BatteryView extends View {
 
-  private final Paint circlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-  private final TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+  // anti-alias disabled for e-ink: EPD renders pure black/white pixels
+  private final Paint circlePaint = new Paint();
+  private final TextPaint textPaint = new TextPaint();
+  private final RectF arcRect = new RectF();
+  private final Rect textBounds = new Rect();
 
   private int maxProgress = 100;
   private int progress = 0;
@@ -39,6 +44,7 @@ public class BatteryView extends View {
   private void init() {
     circlePaint.setStyle(Paint.Style.STROKE);
     textPaint.setColor(0xff000000);
+    textPaint.setFakeBoldText(true);
   }
 
   @Override
@@ -53,7 +59,7 @@ public class BatteryView extends View {
     canvas.drawCircle(getWidth() / 2f, getHeight() / 2f, (size - strokeWidth) / 2f, circlePaint);
 
     // 画黑色电量弧线
-    RectF arcRect = new RectF(
+    arcRect.set(
         (getWidth() - size + strokeWidth) / 2f,
         (getHeight() - size + strokeWidth) / 2f,
         (getWidth() - size - strokeWidth) / 2f + size,
@@ -69,22 +75,22 @@ public class BatteryView extends View {
   }
 
   private void drawText(Canvas canvas) {
-    String showText = String.format("%02d", Math.round(progress * 1f / maxProgress * 100));
-    Rect rect = new Rect();
-    textPaint.getTextBounds(showText, 0, showText.length(), rect);
-    textPaint.setFakeBoldText(true);
+    String showText = String.format(Locale.US, "%02d", Math.round(progress * 1f / maxProgress * 100));
+    textPaint.getTextBounds(showText, 0, showText.length(), textBounds);
     canvas.translate(getWidth() / 2f, getHeight() / 2f);
     canvas.drawText(showText,
-        -(rect.right - rect.left) / 1.9f,
-        (rect.bottom - rect.top) / 2f, textPaint);
+        -(textBounds.right - textBounds.left) / 1.9f,
+        (textBounds.bottom - textBounds.top) / 2f, textPaint);
   }
 
   public void setMaxProgress(int maxProgress) {
+    if (this.maxProgress == maxProgress) return;
     this.maxProgress = maxProgress;
     invalidate();
   }
 
   public void setProgress(int progress) {
+    if (this.progress == progress) return;
     this.progress = progress;
     invalidate();
   }

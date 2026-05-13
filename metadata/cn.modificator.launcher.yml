@@ -1,0 +1,49 @@
+Categories:
+  - System
+
+License: Apache-2.0
+AuthorName: Modificator (original), maintained by hitobias
+SourceCode: https://github.com/hitobias/E-Ink-Launcher
+IssueTracker: https://github.com/hitobias/E-Ink-Launcher/issues
+
+Summary: Minimal launcher optimized for e-ink readers
+Description: |-
+  E-Ink Launcher is a clean, minimal Android launcher designed for e-ink readers
+  (Onyx Boox, Supernote, Pocketbook, Kindle Fire, etc.).
+
+  Features:
+  * Grid layout with adjustable density and font size
+  * Built-in app search (long-press settings)
+  * App folders (single-cell with composite icons)
+  * Hide / sort apps; "Hidden Apps Manager" for bulk restore
+  * One-tap lock screen / Wi-Fi / Bluetooth shortcuts
+  * Bluetooth quick-connect with last-connected timestamps
+  * Custom font (TTF) via SAF picker
+  * Force language override (independent of system locale)
+  * Settings export/import as JSON
+  * Manifest app shortcuts (Lock / Search / Settings)
+  * Auto periodic screen refresh to clear e-ink ghosting
+  * Pin recently-used apps to top
+  * Optional notification badges
+  * Return-to-launcher persistent notification
+
+  Two flavors:
+  * generic — for any Android device
+  * supernote — adds Chauvet OS internal-package filtering
+
+RepoType: git
+Repo: https://github.com/hitobias/E-Ink-Launcher
+
+Builds:
+  - versionName: 0.1.8.6-generic
+    versionCode: 30
+    commit: HEAD
+    subdir: app
+    gradle:
+      - generic
+    output: app/build/outputs/apk/generic/release/app-generic-release.apk
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags v[0-9.]+
+CurrentVersion: 0.1.8.6-generic
+CurrentVersionCode: 30

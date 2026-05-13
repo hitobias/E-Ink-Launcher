@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -14,6 +13,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -22,7 +22,6 @@ import java.util.Map;
 
 /**
  * 全局异常捕获处理器。
- * 捕获未处理异常后记录日志并跳转到崩溃详情页。
  */
 public class CrashCapture implements Thread.UncaughtExceptionHandler {
 
@@ -42,14 +41,7 @@ public class CrashCapture implements Thread.UncaughtExceptionHandler {
     return INSTANCE;
   }
 
-  /**
-   * 初始化崩溃捕获。
-   *
-   * @param context         Application Context
-   * @param restartTime     重启延迟（保留参数，当前不使用）
-   * @param restartActivity 重启目标 Activity（保留参数，当前不使用）
-   */
-  public void init(Context context, long restartTime, Class<?> restartActivity) {
+  public void init(Context context) {
     appContext = context.getApplicationContext();
     defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
     Thread.setDefaultUncaughtExceptionHandler(this);
@@ -57,47 +49,47 @@ public class CrashCapture implements Thread.UncaughtExceptionHandler {
 
   @Override
   public void uncaughtException(Thread thread, Throwable ex) {
-    ex.printStackTrace();
+    Log.e(TAG, "Uncaught exception on thread " + thread.getName(), ex);
 
-    if (!handleException(ex) && defaultHandler != null) {
-      defaultHandler.uncaughtException(thread, ex);
-      return;
+    String logFile = null;
+    try {
+      collectDeviceInfo();
+      logFile = saveCrashInfo(ex);
+    } catch (Throwable collectError) {
+      Log.e(TAG, "Failed to record crash details", collectError);
     }
 
     try {
-      Thread.sleep(2000);
-    } catch (InterruptedException ignored) {
+      Intent crashIntent = new Intent(appContext, CrashDetailPage.class);
+      crashIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+      if (!TextUtils.isEmpty(logFile)) {
+        crashIntent.putExtra("crashFile", logFile);
+      }
+      appContext.startActivity(crashIntent);
+    } catch (Throwable startError) {
+      Log.e(TAG, "Failed to start CrashDetailPage", startError);
+      if (defaultHandler != null) {
+        defaultHandler.uncaughtException(thread, ex);
+        return;
+      }
     }
-
-    String logFile = saveCrashInfo(ex);
-
-    Intent crashIntent = new Intent(appContext, CrashDetailPage.class);
-    crashIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-    if (!TextUtils.isEmpty(logFile)) {
-      crashIntent.putExtra("crashFile", logFile);
-    }
-    appContext.startActivity(crashIntent);
 
     android.os.Process.killProcess(android.os.Process.myPid());
     System.exit(10);
   }
 
-  private boolean handleException(Throwable ex) {
-    if (ex == null) return false;
-    collectDeviceInfo();
-    return true;
-  }
-
   private void collectDeviceInfo() {
     try {
       PackageManager pm = appContext.getPackageManager();
-      PackageInfo pi = pm.getPackageInfo(appContext.getPackageName(), PackageManager.GET_ACTIVITIES);
+      PackageInfo pi = pm.getPackageInfo(appContext.getPackageName(), 0);
       if (pi != null) {
         deviceInfo.put("versionName", pi.versionName != null ? pi.versionName : "null");
-        deviceInfo.put("versionCode", String.valueOf(pi.versionCode));
+        long longCode = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+            ? pi.getLongVersionCode()
+            : pi.versionCode;
+        deviceInfo.put("versionCode", String.valueOf(longCode));
       }
-    } catch (PackageManager.NameNotFoundException e) {
-      e.printStackTrace();
+    } catch (PackageManager.NameNotFoundException ignored) {
     }
     deviceInfo.put("osVersion", Build.VERSION.RELEASE);
     deviceInfo.put("sdkCode", String.valueOf(Build.VERSION.SDK_INT));
@@ -108,12 +100,10 @@ public class CrashCapture implements Thread.UncaughtExceptionHandler {
   private String saveCrashInfo(Throwable ex) {
     StringBuilder sb = new StringBuilder();
 
-    // 设备信息
     for (Map.Entry<String, String> entry : deviceInfo.entrySet()) {
       sb.append(entry.getKey()).append("=").append(entry.getValue()).append("\r\n");
     }
 
-    // 异常堆栈
     StringWriter writer = new StringWriter();
     PrintWriter pw = new PrintWriter(writer);
     ex.printStackTrace(pw);
@@ -123,9 +113,8 @@ public class CrashCapture implements Thread.UncaughtExceptionHandler {
       cause = cause.getCause();
     }
     pw.close();
-    sb.append(writer.toString());
+    sb.append(writer);
 
-    // 写入文件
     String fileName = "crash-" + BuildConfig.VERSION_NAME
         + "-" + Build.DEVICE
         + "-" + Build.PRODUCT
@@ -133,24 +122,19 @@ public class CrashCapture implements Thread.UncaughtExceptionHandler {
         + "-" + DATE_FORMAT.format(new Date())
         + "-" + System.currentTimeMillis() + ".log";
 
-    if (!Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
-      return null;
-    }
-
     File dir = appContext.getExternalFilesDir("crash");
     if (dir == null) return null;
 
-    Log.i(TAG, "Crash log dir: " + dir);
-    if (!dir.exists()) {
-      dir.mkdir();
+    if (!dir.exists() && !dir.mkdirs()) {
+      Log.w(TAG, "Failed to create crash dir " + dir);
     }
 
     try (FileOutputStream fos = new FileOutputStream(new File(dir, fileName))) {
-      fos.write(sb.toString().getBytes());
+      fos.write(sb.toString().getBytes(StandardCharsets.UTF_8));
       return fileName;
     } catch (IOException e) {
-      e.printStackTrace();
+      Log.e(TAG, "Failed to write crash log", e);
+      return null;
     }
-    return null;
   }
 }

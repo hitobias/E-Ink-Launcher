@@ -3,9 +3,11 @@ package cn.modificator.launcher.widgets;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.View.MeasureSpec;
 import android.view.ViewGroup;
 
 import cn.modificator.launcher.R;
+import cn.modificator.launcher.model.EpdRefresh;
 
 import static android.view.View.MeasureSpec.EXACTLY;
 import static android.view.View.MeasureSpec.makeMeasureSpec;
@@ -33,6 +35,11 @@ public class EInkLauncherView extends ViewGroup {
     void onPagePrev();
   }
 
+  /** 双击空白处回调（消残影 / 强制刷屏使用）。 */
+  public interface OnDoubleTapListener {
+    void onDoubleTap();
+  }
+
   // =========================================================================
   // 字段
   // =========================================================================
@@ -45,11 +52,22 @@ public class EInkLauncherView extends ViewGroup {
   // 外部依赖
   private LauncherAdapter adapter;
   private OnPageChangeListener pageChangeListener;
+  private OnDoubleTapListener doubleTapListener;
 
   // 滑动检测
   private float touchDownX;
   private float touchDownY;
   private float swipeThreshold;
+  /** 离屏幕边缘小于这个像素的起始点不算翻页（让 system edge gesture 优先）。 */
+  private float edgeInsetPx;
+
+  // 双击检测
+  private long lastTapTime;
+  private float lastTapX;
+  private float lastTapY;
+  private static final long DOUBLE_TAP_INTERVAL_MS = 350L;
+  private static final float DOUBLE_TAP_SLOP_DP = 24f;
+  private float doubleTapSlopPx;
 
   // =========================================================================
   // 构造器
@@ -90,6 +108,11 @@ public class EInkLauncherView extends ViewGroup {
   /** 设置翻页手势监听 */
   public void setOnPageChangeListener(OnPageChangeListener listener) {
     this.pageChangeListener = listener;
+  }
+
+  /** 设置双击空白处监听（用于触发屏幕刷新）。 */
+  public void setOnDoubleTapListener(OnDoubleTapListener listener) {
+    this.doubleTapListener = listener;
   }
 
   // =========================================================================
@@ -138,6 +161,9 @@ public class EInkLauncherView extends ViewGroup {
     if (w <= 0 || h <= 0) return;
 
     swipeThreshold = Math.min(w, h) / 6f;
+    float density = getResources().getDisplayMetrics().density;
+    edgeInsetPx = 24f * density;
+    doubleTapSlopPx = DOUBLE_TAP_SLOP_DP * density;
     int cellW = w / colNum;
     int cellH = h / rowNum;
 
@@ -154,11 +180,12 @@ public class EInkLauncherView extends ViewGroup {
 
   @Override
   protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-    super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-    int w = getAdjustedWidth();
-    int h = getAdjustedHeight();
-    if (w <= 0 || h <= 0) return;
-
+    int specW = MeasureSpec.getSize(widthMeasureSpec);
+    int specH = MeasureSpec.getSize(heightMeasureSpec);
+    setMeasuredDimension(specW, specH);
+    int w = specW - getPaddingLeft() - getPaddingRight();
+    int h = specH - getPaddingTop() - getPaddingBottom();
+    if (w <= 0 || h <= 0 || colNum <= 0 || rowNum <= 0) return;
     int cellWSpec = makeMeasureSpec(w / colNum, EXACTLY);
     int cellHSpec = makeMeasureSpec(h / rowNum, EXACTLY);
     for (int i = 0; i < getChildCount(); i++) {
@@ -207,6 +234,7 @@ public class EInkLauncherView extends ViewGroup {
   void rebind() {
     if (adapter != null) {
       adapter.bindAll();
+      EpdRefresh.fast(this);
     }
   }
 
@@ -235,10 +263,20 @@ public class EInkLauncherView extends ViewGroup {
         touchDownY = event.getY();
         break;
       case MotionEvent.ACTION_UP:
+        // 水平滑动翻页
         int dir = detectSwipe(event.getX(), event.getY());
         if (dir != 0 && pageChangeListener != null) {
           if (dir > 0) pageChangeListener.onPagePrev();
           else pageChangeListener.onPageNext();
+          lastTapTime = 0;
+          return true;
+        }
+        // 双击检测：仅在没有发生滑动时才考虑
+        if (detectDoubleTap(event.getX(), event.getY())) {
+          if (doubleTapListener != null) {
+            doubleTapListener.onDoubleTap();
+          }
+          lastTapTime = 0;
           return true;
         }
         break;
@@ -247,16 +285,43 @@ public class EInkLauncherView extends ViewGroup {
   }
 
   /**
-   * 检测滑动方向。
+   * 检测横向滑动方向。
    *
    * @return 1 = 上一页, -1 = 下一页, 0 = 无有效滑动
    */
   private int detectSwipe(float upX, float upY) {
     if (swipeThreshold <= 0) return 0;
+    // 起始点在屏幕边缘 inset 内的不算翻页 —— 让 Supernote 等系统级 edge gesture 优先。
+    int viewW = getWidth();
+    if (touchDownX < edgeInsetPx || touchDownX > viewW - edgeInsetPx) return 0;
     float dx = upX - touchDownX;
     float dy = upY - touchDownY;
-    if (dx > swipeThreshold || dy > swipeThreshold) return 1;
-    if (dx < -swipeThreshold || dy < -swipeThreshold) return -1;
+    if (Math.abs(dx) <= Math.abs(dy)) return 0;
+    if (dx > swipeThreshold) return 1;
+    if (dx < -swipeThreshold) return -1;
     return 0;
+  }
+
+  /**
+   * 双击检测：两次 tap 时间 < DOUBLE_TAP_INTERVAL_MS 且位置接近视为双击。
+   * 仅在两次都几乎无位移时触发，避免和翻页冲突。
+   */
+  private boolean detectDoubleTap(float upX, float upY) {
+    long now = System.currentTimeMillis();
+    boolean isStationaryTap = Math.abs(upX - touchDownX) < doubleTapSlopPx
+        && Math.abs(upY - touchDownY) < doubleTapSlopPx;
+    boolean result = false;
+    if (isStationaryTap && lastTapTime > 0
+        && now - lastTapTime < DOUBLE_TAP_INTERVAL_MS
+        && Math.abs(upX - lastTapX) < doubleTapSlopPx
+        && Math.abs(upY - lastTapY) < doubleTapSlopPx) {
+      result = true;
+    }
+    if (isStationaryTap) {
+      lastTapTime = result ? 0 : now;
+      lastTapX = upX;
+      lastTapY = upY;
+    }
+    return result;
   }
 }
