@@ -14,6 +14,18 @@
         android:layout_marginTop="10dp"
         android:layout_weight="1"></cn.modificator.launcher.widgets.EInkLauncherView>
 
+    <LinearLayout
+        android:id="@+id/dockBar"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginBottom="4dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone"
+        android:contentDescription="@string/dock_description" />
+
     <View
         android:layout_width="match_parent"
         android:layout_height="0.7dp"
@@ -82,6 +94,7 @@
                 android:layout_height="45dp"
                 android:background="?android:selectableItemBackground"
                 android:clickable="true"
+                android:contentDescription="@string/shortcut_settings"
                 android:padding="10dp"
                 android:src="@drawable/navibar_icon_settings_highlight" />
 

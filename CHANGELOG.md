@@ -2,6 +2,23 @@
 
 All notable changes to this fork.
 
+## [0.2.2] — 2026-05-12
+
+### Fixed
+- **Crash on launch (P0)**: `EpdRefresh` cached negative method lookups
+  with `ConcurrentHashMap.put(key, null)`, which the JDK rejects. The first
+  failed vendor SDK lookup (e.g. Onyx classes on Supernote) crashed the
+  launcher during `setAdapter()`. Fix: store misses in a separate
+  `ConcurrentHashMap.newKeySet()` so neither cache writes a null value.
+- Regression test (`EpdRefreshTest`) covers the negative-cache path on
+  vendor-less JVMs.
+
+### Added
+- **Quick-Launch Dock**: optional bottom row of up to 5 pinned apps,
+  always visible across all pages. Long-press any app → *Pin to Dock*.
+- Settings → *Show Quick-Launch Dock* toggle.
+- `contentDescription` on the settings icon for TalkBack users.
+
 ## [0.2.1] — 2026-05-13
 
 ### Added

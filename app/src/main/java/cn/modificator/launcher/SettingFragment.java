@@ -48,6 +48,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     void onAutoRefreshChanged(int minutes);
     void onPinRecentCountChanged(int n);
     void onNotificationBadgeChanged(boolean enabled);
+    void onDockEnabledChanged(boolean enabled);
     void onEnterManageMode();
   }
 
@@ -66,6 +67,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
   private TextView autoRefreshLabel;
   private TextView pinRecentLabel;
   private TextView notificationBadge;
+  private TextView dockEnabled;
   private Config config;
 
   private ActivityResultLauncher<String[]> storagePermissionLauncher;
@@ -222,6 +224,11 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
       notificationBadge.setOnClickListener(this);
       // 实际生效状态 = 配置开启 && 已授予权限；strikethrough 表示"未启用"。
       notificationBadge.getPaint().setStrikeThruText(!isNotificationBadgeActive());
+    }
+    dockEnabled = root.findViewById(R.id.dockEnabled);
+    if (dockEnabled != null) {
+      dockEnabled.setOnClickListener(this);
+      dockEnabled.getPaint().setStrikeThruText(!config.isDockEnabled());
     }
     fontControl.setProgress((int) ((config.getFontSize() - 10) * 10));
 
@@ -399,6 +406,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
       handlePinRecent();
     } else if (id == R.id.notificationBadge) {
       handleToggleNotificationBadge();
+    } else if (id == R.id.dockEnabled) {
+      handleToggleDock();
     } else if (id == R.id.exportConfig) {
       exportConfigLauncher.launch("eink-launcher-config.json");
     } else if (id == R.id.importConfig) {
@@ -723,6 +732,16 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     // 仅用 config 控制 UI 是否绘制角标。这样关闭后再开启不必重新授权。
     updateNotificationBadgeLabel();
     listener.onNotificationBadgeChanged(newValue);
+  }
+
+  private void handleToggleDock() {
+    boolean newValue = !config.isDockEnabled();
+    config.setDockEnabled(newValue);
+    if (dockEnabled != null) {
+      dockEnabled.getPaint().setStrikeThruText(!newValue);
+      dockEnabled.invalidate();
+    }
+    listener.onDockEnabledChanged(newValue);
   }
 
   /**

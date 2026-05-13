@@ -80,6 +80,7 @@ public class Launcher extends FragmentActivity
   private IconCache iconCache;
   private LauncherAdapter adapter;
   private AppItemBinder binder;
+  private cn.modificator.launcher.widgets.DockManager dockManager;
   private boolean isSystemApp = false;
 
   // ---- Controllers ----
@@ -328,6 +329,24 @@ public class Launcher extends FragmentActivity
       v.setVisibility(View.GONE);
     });
 
+    // Dock 配置：監聽點擊 → 走 onItemClick；長按 → showAppInfoDialog（含 Unpin）
+    android.widget.LinearLayout dockBar = findViewById(R.id.dockBar);
+    if (dockBar != null) {
+      dockManager = new cn.modificator.launcher.widgets.DockManager(
+          dockBar, config, iconCache, getPackageManager());
+      dockManager.setListener(new cn.modificator.launcher.widgets.DockManager.OnDockAction() {
+        @Override
+        public void onLaunch(String packageName, ResolveInfo info) {
+          onItemClick(info);
+        }
+
+        @Override
+        public void onLongPress(String packageName, ResolveInfo info) {
+          showAppInfoDialog(info, packageName);
+        }
+      });
+    }
+
     // 检测系统应用
     try {
       isSystemApp = !isUserApp(getPackageManager().getPackageInfo(getPackageName(), 0));
@@ -425,6 +444,11 @@ public class Launcher extends FragmentActivity
     if (adapter != null) adapter.refreshDisplay();
   }
 
+  @Override
+  public void onDockEnabledChanged(boolean enabled) {
+    if (dockManager != null) dockManager.refresh();
+  }
+
   // =========================================================================
   // 布局更新
   // =========================================================================
@@ -433,6 +457,7 @@ public class Launcher extends FragmentActivity
     if (adapter == null || iconCache == null) return;
     iconCache.refreshCustomIcons(this, config.isShowCustomIcon());
     adapter.refreshDisplay();
+    if (dockManager != null) dockManager.refresh();
   }
 
   /**
@@ -852,9 +877,14 @@ public class Launcher extends FragmentActivity
   }
 
   private void showAppInfoDialog(ResolveInfo info, final String packageName) {
+    boolean pinned = config.isInDock(packageName);
+    String pinAction = pinned
+        ? getString(R.string.app_action_unpin_dock)
+        : getString(R.string.app_action_pin_dock);
     CharSequence[] actions = new CharSequence[]{
         getString(R.string.folder_add_to),
         getString(R.string.app_action_rename),
+        pinAction,
         getString(R.string.app_action_app_info),
         getString(R.string.app_action_hide),
         getString(R.string.app_action_copy_pkg),
@@ -874,18 +904,21 @@ public class Launcher extends FragmentActivity
               promptRenameApp(info, packageName);
               break;
             case 2:
-              openAppDetailsSettings(packageName);
+              togglePinToDock(packageName);
               break;
             case 3:
-              toggleAppHidden(packageName);
-              break;
-            case 4:
-              copyToClipboard(packageName);
-              break;
-            case 5:
               openAppDetailsSettings(packageName);
               break;
+            case 4:
+              toggleAppHidden(packageName);
+              break;
+            case 5:
+              copyToClipboard(packageName);
+              break;
             case 6:
+              openAppDetailsSettings(packageName);
+              break;
+            case 7:
               startActivity(new Intent(Intent.ACTION_DELETE,
                   Uri.parse("package:" + packageName)));
               break;
@@ -893,6 +926,31 @@ public class Launcher extends FragmentActivity
         })
         .setNegativeButton(R.string.dialog_cancel, null)
         .show();
+  }
+
+  /**
+   * 切換 Dock 釘住狀態。釘住時若用戶未啟用 Dock，自動把它打開（首次操作就能看到）。
+   */
+  private void togglePinToDock(String packageName) {
+    if (config.isInDock(packageName)) {
+      if (config.removeFromDock(packageName)) {
+        android.widget.Toast.makeText(this, R.string.dock_unpinned,
+            android.widget.Toast.LENGTH_SHORT).show();
+      }
+    } else {
+      if (!config.addToDock(packageName)) {
+        android.widget.Toast.makeText(this,
+            getString(R.string.dock_full, Config.DOCK_MAX_SIZE),
+            android.widget.Toast.LENGTH_SHORT).show();
+        return;
+      }
+      if (!config.isDockEnabled()) {
+        config.setDockEnabled(true);
+      }
+      android.widget.Toast.makeText(this, R.string.dock_pinned,
+          android.widget.Toast.LENGTH_SHORT).show();
+    }
+    if (dockManager != null) dockManager.refresh();
   }
 
   /**

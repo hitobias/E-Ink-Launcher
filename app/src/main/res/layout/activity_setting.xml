@@ -557,6 +557,20 @@
                 android:background="#000000" />
 
             <TextView
+                android:id="@+id/dockEnabled"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/menu_item_height"
+                android:paddingLeft="20dp"
+                android:gravity="left|center_vertical"
+                android:text="@string/setting_dock_enabled"
+                android:textSize="@dimen/menu_item_text_size" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#000000" />
+
+            <TextView
                 android:id="@+id/returnNotification"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/menu_item_height"

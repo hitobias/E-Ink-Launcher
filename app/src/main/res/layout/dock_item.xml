@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:layout_weight="1"
+    android:background="?android:selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingTop="4dp"
+    android:paddingBottom="2dp">
+
+    <ImageView
+        android:id="@+id/dockItemIcon"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:contentDescription="@string/dock_item_description" />
+
+    <TextView
+        android:id="@+id/dockItemLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textColor="#000000"
+        android:textSize="10sp" />
+</LinearLayout>

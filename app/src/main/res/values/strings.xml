@@ -139,6 +139,15 @@
     <string name="hidden_restored">Restored</string>
     <string name="hidden_restored_all">All restored</string>
 
+    <string name="setting_dock_enabled">Show Quick-Launch Dock</string>
+    <string name="dock_description">Quick-launch dock</string>
+    <string name="dock_item_description">Pinned app</string>
+    <string name="app_action_pin_dock">Pin to Dock</string>
+    <string name="app_action_unpin_dock">Unpin from Dock</string>
+    <string name="dock_full">Dock is full (max %1$d)</string>
+    <string name="dock_pinned">Pinned to Dock</string>
+    <string name="dock_unpinned">Unpinned from Dock</string>
+
     <string name="setting_gesture_help">Gesture Cheatsheet</string>
     <string name="gesture_help_body">• Tap app icon — launch app\n• Long-press app icon — rename / hide / app info / force stop / uninstall / add to folder / usage stats\n• Tap folder — open folder contents\n• Long-press folder — rename / dissolve\n\n• Tap ⚙ — open Settings\n• Long-press ⚙ — search apps\n\n• Tap WiFi icon — toggle (or open settings on Android 10+)\n• Long-press WiFi — open WiFi settings\n• Tap Bluetooth icon — toggle / open settings\n• Long-press Bluetooth — paired-devices quick-connect with last-used time\n• Tap Lock icon — lock screen\n• Long-press Lock — power menu (system apps only)\n\n• Tap clock — show time updates\n• Long-press clock — force E-ink screen refresh\n• Double-tap empty grid area — force refresh (same effect)\n\n• Swipe left on grid — next page\n• Swipe right on grid — previous page\n• Swipes starting near screen edge are passed to the system (Supernote side-bar etc.)\n\n• From any other app — long-press launcher icon for Lock / Search / Settings shortcuts</string>
 

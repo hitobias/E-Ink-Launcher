@@ -6,6 +6,7 @@ import android.view.View;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -19,9 +20,12 @@ public final class EpdRefresh {
 
   private static final String TAG = "EpdRefresh";
 
+  // ConcurrentHashMap 不接受 null value，所以負快取另存在 *_MISSES Set 裡。
+  // 直接 put(key, null) 會抛 NullPointerException，已造成 Supernote 啟動 crash。
   private static final Map<String, Method> METHOD_CACHE = new ConcurrentHashMap<>();
+  private static final Set<String> METHOD_MISSES = ConcurrentHashMap.newKeySet();
   private static final Map<String, Object> ENUM_CACHE = new ConcurrentHashMap<>();
-  private static final Object MISSING = new Object();
+  private static final Set<String> ENUM_MISSES = ConcurrentHashMap.newKeySet();
 
   private EpdRefresh() {}
 
@@ -160,7 +164,7 @@ public final class EpdRefresh {
     String key = cacheKey(className, methodName, params);
     Method cached = METHOD_CACHE.get(key);
     if (cached != null) return cached;
-    if (METHOD_CACHE.containsKey(key)) return null;
+    if (METHOD_MISSES.contains(key)) return null;
 
     try {
       Class<?> cls = Class.forName(className);
@@ -175,15 +179,15 @@ public final class EpdRefresh {
     } catch (Throwable t) {
       Log.d(TAG, "Reflection error resolving " + className + "#" + methodName, t);
     }
-    METHOD_CACHE.put(key, null);
+    METHOD_MISSES.add(key);
     return null;
   }
 
   private static Object resolveEnumConstant(String enumClassName, String constantName) {
     String key = enumClassName + "#" + constantName;
     Object cached = ENUM_CACHE.get(key);
-    if (cached == MISSING) return null;
     if (cached != null) return cached;
+    if (ENUM_MISSES.contains(key)) return null;
 
     try {
       Class<?> cls = Class.forName(enumClassName);
@@ -200,7 +204,7 @@ public final class EpdRefresh {
     } catch (Throwable t) {
       Log.d(TAG, "Reflection error resolving enum " + key, t);
     }
-    ENUM_CACHE.put(key, MISSING);
+    ENUM_MISSES.add(key);
     return null;
   }
 

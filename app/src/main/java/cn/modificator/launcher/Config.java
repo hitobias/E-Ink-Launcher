@@ -34,6 +34,11 @@ public class Config {
   public static final String KEY_PIN_RECENT_COUNT = "launcherPinRecentCount";
   /** 每个 app 的用户自定义显示名；存为 prefs 内 "rename_<pkg>" 单独 key 避免合并冲突。 */
   public static final String KEY_RENAME_PREFIX = "rename_";
+  /** 快速啟動 Dock 釘住的 app 包名列表（CSV 順序保留）。 */
+  public static final String KEY_DOCK_APPS = "launcherDockApps";
+  public static final String KEY_DOCK_ENABLED = "launcherDockEnabled";
+  /** Dock 最多允許的釘住數量（避免擠爆底部）。 */
+  public static final int DOCK_MAX_SIZE = 5;
   /** 通知角标总开关（默认关闭，开启时需要用户授予通知访问权限）。 */
   public static final String KEY_NOTIFICATION_BADGE = "launcherNotificationBadge";
   /** Schema 版本号，用于将来字段重命名 / 类型变更时做迁移。 */
@@ -334,5 +339,60 @@ public class Config {
     } else {
       prefs.edit().putString(key, customName).apply();
     }
+  }
+
+  // ---- 快速啟動 Dock ----
+
+  public boolean isDockEnabled() {
+    return prefs.getBoolean(KEY_DOCK_ENABLED, false);
+  }
+
+  public void setDockEnabled(boolean enabled) {
+    prefs.edit().putBoolean(KEY_DOCK_ENABLED, enabled).apply();
+  }
+
+  /** 返回 Dock 中釘住的包名（順序保留）。 */
+  public java.util.List<String> getDockApps() {
+    String csv = prefs.getString(KEY_DOCK_APPS, "");
+    if (csv.isEmpty()) return java.util.Collections.emptyList();
+    java.util.ArrayList<String> result = new java.util.ArrayList<>();
+    for (String s : csv.split(",")) {
+      if (!s.isEmpty()) result.add(s);
+    }
+    return result;
+  }
+
+  public void setDockApps(java.util.List<String> apps) {
+    if (apps == null || apps.isEmpty()) {
+      prefs.edit().remove(KEY_DOCK_APPS).apply();
+      return;
+    }
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < apps.size() && i < DOCK_MAX_SIZE; i++) {
+      if (i > 0) sb.append(',');
+      sb.append(apps.get(i));
+    }
+    prefs.edit().putString(KEY_DOCK_APPS, sb.toString()).apply();
+  }
+
+  public boolean isInDock(String pkg) {
+    return getDockApps().contains(pkg);
+  }
+
+  /** @return true 表示加入成功；false 表示已存在或 Dock 已滿 */
+  public boolean addToDock(String pkg) {
+    java.util.List<String> list = new java.util.ArrayList<>(getDockApps());
+    if (list.contains(pkg)) return false;
+    if (list.size() >= DOCK_MAX_SIZE) return false;
+    list.add(pkg);
+    setDockApps(list);
+    return true;
+  }
+
+  public boolean removeFromDock(String pkg) {
+    java.util.List<String> list = new java.util.ArrayList<>(getDockApps());
+    if (!list.remove(pkg)) return false;
+    setDockApps(list);
+    return true;
   }
 }

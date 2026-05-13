@@ -138,6 +138,15 @@
     <string name="hidden_restored">已恢復</string>
     <string name="hidden_restored_all">已全部恢復</string>
 
+    <string name="setting_dock_enabled">顯示快速啟動 Dock</string>
+    <string name="dock_description">快速啟動列</string>
+    <string name="dock_item_description">已釘住的應用</string>
+    <string name="app_action_pin_dock">釘到 Dock</string>
+    <string name="app_action_unpin_dock">從 Dock 移除</string>
+    <string name="dock_full">Dock 已滿（上限 %1$d）</string>
+    <string name="dock_pinned">已釘到 Dock</string>
+    <string name="dock_unpinned">已從 Dock 移除</string>
+
     <string name="setting_gesture_help">手勢速查</string>
     <string name="gesture_help_body">• 點擊 app — 啟動\n• 長按 app — 重新命名 / 隱藏 / 應用資訊 / 強制停止 / 解除安裝 / 加入資料夾 / 使用統計\n• 點擊資料夾 — 開啟內容\n• 長按資料夾 — 重新命名 / 解散\n\n• 點擊 ⚙ — 開啟設定\n• 長按 ⚙ — 搜尋應用\n\n• 點擊 WiFi 圖示 — 切換（Android 10+ 跳設定面板）\n• 長按 WiFi — 進 WiFi 設定\n• 點擊藍牙 — 切換 / 進設定\n• 長按藍牙 — 已配對裝置快速連接（含上次連接時間）\n• 點擊鎖定 — 一鍵鎖定\n• 長按鎖定 — 電源選單（僅系統 app 可用）\n\n• 點擊時鐘 — 立即更新\n• 長按時鐘 — 強制刷屏（清殘影）\n• 雙擊空白格 — 同上\n\n• 網格向左滑 — 下一頁\n• 網格向右滑 — 上一頁\n• 起始於螢幕邊緣的手勢讓給系統（Supernote 側欄等）\n\n• 在其他 app 內 — 長按 launcher 圖示 / 鎖定 / 搜尋 / 設定</string>
 
