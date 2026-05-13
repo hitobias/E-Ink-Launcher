@@ -125,7 +125,13 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
         uri -> {
           if (uri != null) doImportConfig(uri);
         });
+    overlayPermissionLauncher = registerForActivityResult(
+        new ActivityResultContracts.StartActivityForResult(),
+        result -> onOverlayPermissionResult());
   }
+
+  private ActivityResultLauncher<Intent> overlayPermissionLauncher;
+  private TextView floatingHome;
 
   private void doExportConfig(android.net.Uri uri) {
     try (java.io.OutputStream out = requireContext().getContentResolver().openOutputStream(uri)) {
@@ -229,6 +235,11 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     if (dockEnabled != null) {
       dockEnabled.setOnClickListener(this);
       dockEnabled.getPaint().setStrikeThruText(!config.isDockEnabled());
+    }
+    floatingHome = root.findViewById(R.id.floatingHome);
+    if (floatingHome != null) {
+      floatingHome.setOnClickListener(this);
+      updateFloatingHomeLabel();
     }
     fontControl.setProgress((int) ((config.getFontSize() - 10) * 10));
 
@@ -408,6 +419,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
       handleToggleNotificationBadge();
     } else if (id == R.id.dockEnabled) {
       handleToggleDock();
+    } else if (id == R.id.floatingHome) {
+      handleToggleFloatingHome();
     } else if (id == R.id.exportConfig) {
       exportConfigLauncher.launch("eink-launcher-config.json");
     } else if (id == R.id.importConfig) {
@@ -742,6 +755,55 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
       dockEnabled.invalidate();
     }
     listener.onDockEnabledChanged(newValue);
+  }
+
+  /**
+   * 切換懸浮 Home 按鈕。首次開啟若無 overlay 權限，先跳系統授權頁；
+   * 用戶回到本頁時 {@link #onOverlayPermissionResult()} 收尾。
+   */
+  private void handleToggleFloatingHome() {
+    boolean current = config.isFloatingHomeEnabled();
+    if (current) {
+      config.setFloatingHomeEnabled(false);
+      cn.modificator.launcher.model.FloatingHomeService.stop(requireContext());
+      Toast.makeText(requireContext(),
+          R.string.floating_home_disabled_toast, Toast.LENGTH_SHORT).show();
+      updateFloatingHomeLabel();
+      return;
+    }
+    if (!cn.modificator.launcher.model.FloatingHomeService.canDrawOverlays(requireContext())) {
+      Toast.makeText(requireContext(),
+          R.string.floating_home_need_permission, Toast.LENGTH_LONG).show();
+      Intent grant = new Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+          android.net.Uri.parse("package:" + requireContext().getPackageName()));
+      try {
+        overlayPermissionLauncher.launch(grant);
+      } catch (Exception ignored) {
+      }
+      return;
+    }
+    enableFloatingHomeNow();
+  }
+
+  private void onOverlayPermissionResult() {
+    // 用戶從系統授權頁回來：若已授權則直接啟用；否則無動作（用戶下次再點即可）。
+    if (cn.modificator.launcher.model.FloatingHomeService.canDrawOverlays(requireContext())) {
+      enableFloatingHomeNow();
+    }
+  }
+
+  private void enableFloatingHomeNow() {
+    config.setFloatingHomeEnabled(true);
+    cn.modificator.launcher.model.FloatingHomeService.start(requireContext());
+    Toast.makeText(requireContext(),
+        R.string.floating_home_enabled_toast, Toast.LENGTH_LONG).show();
+    updateFloatingHomeLabel();
+  }
+
+  private void updateFloatingHomeLabel() {
+    if (floatingHome == null) return;
+    floatingHome.getPaint().setStrikeThruText(!config.isFloatingHomeEnabled());
+    floatingHome.invalidate();
   }
 
   /**

@@ -39,6 +39,13 @@ public class Config {
   public static final String KEY_DOCK_ENABLED = "launcherDockEnabled";
   /** Dock 最多允許的釘住數量（避免擠爆底部）。 */
   public static final int DOCK_MAX_SIZE = 5;
+
+  /** 懸浮 Home 按鈕。 */
+  public static final String KEY_FLOATING_HOME_ENABLED = "launcherFloatingHomeEnabled";
+  public static final String KEY_FLOATING_HOME_X = "launcherFloatingHomeX";
+  public static final String KEY_FLOATING_HOME_Y = "launcherFloatingHomeY";
+  public static final String KEY_FLOATING_HOME_SIZE_DP = "launcherFloatingHomeSizeDp";
+  public static final int FLOATING_HOME_DEFAULT_SIZE_DP = 44;
   /** 通知角标总开关（默认关闭，开启时需要用户授予通知访问权限）。 */
   public static final String KEY_NOTIFICATION_BADGE = "launcherNotificationBadge";
   /** Schema 版本号，用于将来字段重命名 / 类型变更时做迁移。 */
@@ -394,5 +401,38 @@ public class Config {
     if (!list.remove(pkg)) return false;
     setDockApps(list);
     return true;
+  }
+
+  // ---- 懸浮 Home 按鈕 ----
+
+  public boolean isFloatingHomeEnabled() {
+    return prefs.getBoolean(KEY_FLOATING_HOME_ENABLED, false);
+  }
+
+  public void setFloatingHomeEnabled(boolean enabled) {
+    prefs.edit().putBoolean(KEY_FLOATING_HOME_ENABLED, enabled).apply();
+  }
+
+  public int getFloatingHomeX() {
+    return prefs.getInt(KEY_FLOATING_HOME_X, -1);
+  }
+
+  public int getFloatingHomeY() {
+    return prefs.getInt(KEY_FLOATING_HOME_Y, -1);
+  }
+
+  public void setFloatingHomePosition(int x, int y) {
+    prefs.edit()
+        .putInt(KEY_FLOATING_HOME_X, x)
+        .putInt(KEY_FLOATING_HOME_Y, y)
+        .apply();
+  }
+
+  public int getFloatingHomeSizeDp() {
+    return prefs.getInt(KEY_FLOATING_HOME_SIZE_DP, FLOATING_HOME_DEFAULT_SIZE_DP);
+  }
+
+  public void setFloatingHomeSizeDp(int dp) {
+    prefs.edit().putInt(KEY_FLOATING_HOME_SIZE_DP, dp).apply();
   }
 }

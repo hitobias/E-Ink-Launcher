@@ -161,6 +161,11 @@ public class Launcher extends FragmentActivity
     binder.setNotificationBadgeEnabled(config.isNotificationBadgeEnabled());
     NotificationCounter.register(notificationCountListener);
     handleShortcutIntent(getIntent());
+    // 若用戶已啟用懸浮 Home，開機後 launcher 自啟時順帶把 service 拉起來。
+    if (config.isFloatingHomeEnabled()
+        && cn.modificator.launcher.model.FloatingHomeService.canDrawOverlays(this)) {
+      cn.modificator.launcher.model.FloatingHomeService.start(this);
+    }
   }
 
   @Override

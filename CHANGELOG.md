@@ -2,6 +2,16 @@
 
 All notable changes to this fork.
 
+## [0.2.4] — 2026-05-13
+
+### Added
+- **Floating Home Button**: optional system-wide overlay button that returns
+  the user to the launcher from any screen. Built for devices like Supernote
+  where the OEM hardcodes the home gesture to a non-replaceable component,
+  leaving no way back when the original launcher is disabled.
+  Settings → *Floating Home Button*. Drag to reposition, tap to go home.
+  Requires the system *Display over other apps* permission.
+
 ## [0.2.3] — 2026-05-13
 
 ### Added

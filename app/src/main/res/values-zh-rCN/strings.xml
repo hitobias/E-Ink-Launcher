@@ -138,6 +138,13 @@
     <string name="hidden_restored">已恢复</string>
     <string name="hidden_restored_all">已全部恢复</string>
 
+    <string name="setting_floating_home">悬浮 Home 按钮</string>
+    <string name="floating_home_label">Home 按钮</string>
+    <string name="floating_home_running">悬浮 Home 运行中</string>
+    <string name="floating_home_running_summary">点屏幕上的按钮回到桌面。</string>
+    <string name="floating_home_need_permission">请先授予"在其他应用上层显示"权限。</string>
+    <string name="floating_home_enabled_toast">已启用悬浮 Home — 拖拽可移位，点击回桌面。</string>
+    <string name="floating_home_disabled_toast">已关闭悬浮 Home。</string>
     <string name="setting_dock_enabled">显示快速启动 Dock</string>
     <string name="dock_description">快速启动栏</string>
     <string name="dock_item_description">已固定的应用</string>
