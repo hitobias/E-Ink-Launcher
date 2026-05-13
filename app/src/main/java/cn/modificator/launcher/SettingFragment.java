@@ -830,10 +830,16 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     }
     // 先設置 config flag——AccessibilityService 啟用後立即生效，不必再回到設定頁。
     config.setLauncherRedirectEnabled(true);
+    // 3 顆按鈕：
+    // - 正向：跳系統「無障礙服務」設定（第 2 步：授權）
+    // - 中性：直接打開 SupernoteLauncher 的「應用資訊」（第 1 步：啟用該包）
+    // - 取消：回退 config
     new android.app.AlertDialog.Builder(requireContext())
         .setTitle(R.string.setting_launcher_redirect)
         .setMessage(R.string.launcher_redirect_steps)
-        .setPositiveButton(R.string.dialog_ok, (d, w) -> {
+        .setNeutralButton(R.string.launcher_redirect_open_supernote, (d, w) ->
+            openSupernoteLauncherAppInfo())
+        .setPositiveButton(R.string.launcher_redirect_open_accessibility, (d, w) -> {
           try {
             startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
@@ -845,6 +851,27 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
           updateLauncherRedirectLabel();
         })
         .show();
+  }
+
+  /**
+   * 直接跳到 SupernoteLauncher 的「應用資訊」頁，用戶可一鍵點「啟用」。
+   * 系統不一定每個 ROM 都支援 disabled package 的詳情頁，失敗時退回全 app 列表。
+   */
+  private void openSupernoteLauncherAppInfo() {
+    Intent direct = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        .setData(android.net.Uri.parse("package:com.ratta.supernote.launcher"))
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    try {
+      startActivity(direct);
+      return;
+    } catch (Exception ignored) {
+    }
+    Intent fallback = new Intent(Settings.ACTION_MANAGE_ALL_APPLICATIONS_SETTINGS)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    try {
+      startActivity(fallback);
+    } catch (Exception ignored) {
+    }
   }
 
   private void updateLauncherRedirectLabel() {

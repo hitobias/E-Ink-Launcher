@@ -2,6 +2,15 @@
 
 All notable changes to this fork.
 
+## [0.2.6] — 2026-05-13
+
+### Changed
+- Right-Slider Redirect setup dialog now offers a one-tap *Open Supernote
+  app* button that jumps directly to SupernoteLauncher's App Info page.
+  Chauvet OS hides the standard Settings → Apps screen, so finding the
+  Enable toggle by hand is non-obvious. Falls back to the full app list
+  when the OEM doesn't allow opening details for disabled packages.
+
 ## [0.2.5] — 2026-05-13
 
 ### Added

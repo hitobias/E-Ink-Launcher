@@ -142,7 +142,9 @@
     <string name="setting_launcher_redirect">Redirect Supernote Right-Slider</string>
     <string name="launcher_redirect_description">Detects when the Supernote stock launcher comes to the foreground (via the hardwired right-slider gesture) and immediately switches back to E-Ink Launcher.</string>
     <string name="launcher_redirect_summary">Reclaims the Supernote right-slider home gesture for E-Ink Launcher.</string>
-    <string name="launcher_redirect_steps">To use this:\n1. Re-enable \"Supernote Launcher\" in system Apps settings\n2. Tap OK, then grant accessibility access on the next screen\n3. Right-slider will then return to E-Ink Launcher</string>
+    <string name="launcher_redirect_steps">To use this:\n1. Tap \"Open Supernote app\" and press Enable on its app info page\n2. Come back here, then tap \"Open Accessibility\" and turn on this service\n3. Right-slider will then return to E-Ink Launcher</string>
+    <string name="launcher_redirect_open_supernote">Open Supernote app</string>
+    <string name="launcher_redirect_open_accessibility">Open Accessibility</string>
     <string name="launcher_redirect_enabled_toast">Right-slider redirect armed. Trigger the slider to test.</string>
     <string name="launcher_redirect_disabled_toast">Right-slider redirect disabled.</string>
     <string name="dialog_ok">OK</string>

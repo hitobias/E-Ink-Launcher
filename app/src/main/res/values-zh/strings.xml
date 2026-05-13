@@ -141,7 +141,9 @@
     <string name="setting_launcher_redirect">接管 Supernote 右侧滑条</string>
     <string name="launcher_redirect_description">检测 Supernote 原厂 launcher 被右侧滑条手势启动的瞬间，立即切回 E-Ink Launcher。</string>
     <string name="launcher_redirect_summary">把 Supernote 右侧滑条手势接管到本 launcher。</string>
-    <string name="launcher_redirect_steps">使用步骤：\n1. 在系统 Apps 设置中重新启用"Supernote Launcher"\n2. 点 OK，下一页授予无障碍权限\n3. 之后右侧滑条即会回到 E-Ink Launcher</string>
+    <string name="launcher_redirect_steps">使用步骤：\n1. 点下方"打开 Supernote" → 在应用信息页按"启用"\n2. 回到本页 → 点"打开无障碍" → 启用本服务\n3. 之后右侧滑条即会回到 E-Ink Launcher</string>
+    <string name="launcher_redirect_open_supernote">打开 Supernote</string>
+    <string name="launcher_redirect_open_accessibility">打开无障碍</string>
     <string name="launcher_redirect_enabled_toast">右侧滑条接管已启动，可试试手势验证。</string>
     <string name="launcher_redirect_disabled_toast">右侧滑条接管已关闭。</string>
     <string name="dialog_ok">确定</string>
