@@ -2,6 +2,12 @@
 
 All notable changes to this fork.
 
+## [0.2.3] — 2026-05-13
+
+### Added
+- Version + build number line in the About dialog (e.g. `v0.2.3-supernote (33)`).
+  Lets users quote the exact build when reporting issues.
+
 ## [0.2.2] — 2026-05-12
 
 ### Fixed

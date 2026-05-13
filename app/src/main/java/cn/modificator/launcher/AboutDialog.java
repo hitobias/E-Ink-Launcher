@@ -2,6 +2,8 @@ package cn.modificator.launcher;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -30,6 +32,7 @@ public class AboutDialog {
     root.setBackgroundColor(0xffffffff);
 
     addTitle(root, context.getString(R.string.app_name), 30);
+    addVersion(root);
     addDivider(root);
 
     TextView authorInfo = makeTextBlock(context.getString(R.string.about_author_info), 18);
@@ -51,6 +54,37 @@ public class AboutDialog {
     root.addView(makeTextBlock(context.getString(R.string.about_description), 14));
 
     return root;
+  }
+
+  /**
+   * 版本行：取 versionName（含 flavor 後綴，如 "0.2.2-supernote"）+ versionCode。
+   * 用戶回報 bug 時長截圖即可看到精確版本，少一輪追問。
+   */
+  private void addVersion(LinearLayout root) {
+    String label = readVersionLabel();
+    if (label == null) return;
+    TextView tv = new TextView(context);
+    tv.setText(label);
+    tv.setTextSize(13);
+    tv.setTextColor(0xff000000);
+    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+    lp.topMargin = Utils.dp2Px(context, 2);
+    lp.bottomMargin = Utils.dp2Px(context, 6);
+    root.addView(tv, lp);
+  }
+
+  private String readVersionLabel() {
+    try {
+      PackageInfo pi = context.getPackageManager()
+          .getPackageInfo(context.getPackageName(), 0);
+      long code = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P
+          ? pi.getLongVersionCode()
+          : pi.versionCode;
+      return "v" + pi.versionName + " (" + code + ")";
+    } catch (PackageManager.NameNotFoundException e) {
+      return null;
+    }
   }
 
   private void addTitle(LinearLayout root, String text, int sizeSp) {
