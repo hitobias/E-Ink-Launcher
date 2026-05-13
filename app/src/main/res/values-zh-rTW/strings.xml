@@ -138,6 +138,14 @@
     <string name="hidden_restored">已恢復</string>
     <string name="hidden_restored_all">已全部恢復</string>
 
+    <string name="setting_launcher_redirect">接管 Supernote 右側滑條</string>
+    <string name="launcher_redirect_description">偵測 Supernote 原廠 launcher 因右側滑條手勢被啟動的瞬間，立即切回 E-Ink Launcher。</string>
+    <string name="launcher_redirect_summary">把 Supernote 的右側滑條手勢接管到本 launcher。</string>
+    <string name="launcher_redirect_steps">使用步驟：\n1. 在系統 Apps 設定中重新啟用「Supernote Launcher」\n2. 點 OK，下一頁授予無障礙權限\n3. 之後右側滑條即會回到 E-Ink Launcher</string>
+    <string name="launcher_redirect_enabled_toast">右側滑條接管已啟動，可試試手勢驗證。</string>
+    <string name="launcher_redirect_disabled_toast">右側滑條接管已關閉。</string>
+    <string name="dialog_ok">確定</string>
+
     <string name="setting_floating_home">懸浮 Home 按鈕</string>
     <string name="floating_home_label">Home 按鈕</string>
     <string name="floating_home_running">懸浮 Home 運行中</string>

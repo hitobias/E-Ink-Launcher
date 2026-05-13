@@ -132,6 +132,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
 
   private ActivityResultLauncher<Intent> overlayPermissionLauncher;
   private TextView floatingHome;
+  private TextView launcherRedirect;
 
   private void doExportConfig(android.net.Uri uri) {
     try (java.io.OutputStream out = requireContext().getContentResolver().openOutputStream(uri)) {
@@ -240,6 +241,11 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     if (floatingHome != null) {
       floatingHome.setOnClickListener(this);
       updateFloatingHomeLabel();
+    }
+    launcherRedirect = root.findViewById(R.id.launcherRedirect);
+    if (launcherRedirect != null) {
+      launcherRedirect.setOnClickListener(this);
+      updateLauncherRedirectLabel();
     }
     fontControl.setProgress((int) ((config.getFontSize() - 10) * 10));
 
@@ -421,6 +427,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
       handleToggleDock();
     } else if (id == R.id.floatingHome) {
       handleToggleFloatingHome();
+    } else if (id == R.id.launcherRedirect) {
+      handleToggleLauncherRedirect();
     } else if (id == R.id.exportConfig) {
       exportConfigLauncher.launch("eink-launcher-config.json");
     } else if (id == R.id.importConfig) {
@@ -807,6 +815,48 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
   }
 
   /**
+   * 接管 Supernote 右側滑條：先彈說明對話框告知用戶要重新啟用原廠 launcher
+   * + 授予無障礙權限；同意後跳到系統無障礙設定頁，用戶回來後 onResume 再
+   * 重新讀取狀態並更新標籤。
+   */
+  private void handleToggleLauncherRedirect() {
+    boolean current = config.isLauncherRedirectEnabled();
+    if (current) {
+      config.setLauncherRedirectEnabled(false);
+      Toast.makeText(requireContext(),
+          R.string.launcher_redirect_disabled_toast, Toast.LENGTH_SHORT).show();
+      updateLauncherRedirectLabel();
+      return;
+    }
+    // 先設置 config flag——AccessibilityService 啟用後立即生效，不必再回到設定頁。
+    config.setLauncherRedirectEnabled(true);
+    new android.app.AlertDialog.Builder(requireContext())
+        .setTitle(R.string.setting_launcher_redirect)
+        .setMessage(R.string.launcher_redirect_steps)
+        .setPositiveButton(R.string.dialog_ok, (d, w) -> {
+          try {
+            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+          } catch (Exception ignored) {
+          }
+        })
+        .setNegativeButton(R.string.dialog_cancel, (d, w) -> {
+          config.setLauncherRedirectEnabled(false);
+          updateLauncherRedirectLabel();
+        })
+        .show();
+  }
+
+  private void updateLauncherRedirectLabel() {
+    if (launcherRedirect == null) return;
+    // 配置開啟 && 系統無障礙權限已授予 = 真正啟用；strikethrough 表示「未啟用」。
+    boolean active = config.isLauncherRedirectEnabled()
+        && cn.modificator.launcher.model.LauncherRedirectService.isEnabled(requireContext());
+    launcherRedirect.getPaint().setStrikeThruText(!active);
+    launcherRedirect.invalidate();
+  }
+
+  /**
    * 在最新平台上请求合适的存储/媒体权限，授权后执行回调。
    */
   private void withStoragePermission(Runnable next) {
@@ -840,5 +890,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     super.onResume();
     updateDefaultLauncherLabel();
     updateNotificationBadgeLabel();
+    // 用戶從系統無障礙設定頁回來時刷新接管狀態標籤。
+    updateLauncherRedirectLabel();
   }
 }

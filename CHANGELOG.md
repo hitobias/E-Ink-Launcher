@@ -2,6 +2,22 @@
 
 All notable changes to this fork.
 
+## [0.2.5] — 2026-05-13
+
+### Added
+- **Right-Slider Redirect (Supernote)**: an opt-in accessibility service
+  that detects when the Supernote stock launcher comes to the foreground
+  (via the hardwired right-slider home gesture) and immediately switches
+  back to E-Ink Launcher. With this, the right-slider behaves as if it
+  were rebindable to a custom HOME launcher.
+  - Privacy-minded config: `canRetrieveWindowContent="false"`,
+    `packageNames` pinned to `com.ratta.supernote.launcher`,
+    `eventTypes` pinned to `typeWindowStateChanged`.
+  - 300ms debounce prevents redirect loops.
+  - Settings → *Redirect Supernote Right-Slider* with a setup dialog
+    that walks the user through re-enabling the stock launcher and
+    granting accessibility access.
+
 ## [0.2.4] — 2026-05-13
 
 ### Added

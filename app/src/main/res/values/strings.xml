@@ -139,6 +139,14 @@
     <string name="hidden_restored">Restored</string>
     <string name="hidden_restored_all">All restored</string>
 
+    <string name="setting_launcher_redirect">Redirect Supernote Right-Slider</string>
+    <string name="launcher_redirect_description">Detects when the Supernote stock launcher comes to the foreground (via the hardwired right-slider gesture) and immediately switches back to E-Ink Launcher.</string>
+    <string name="launcher_redirect_summary">Reclaims the Supernote right-slider home gesture for E-Ink Launcher.</string>
+    <string name="launcher_redirect_steps">To use this:\n1. Re-enable \"Supernote Launcher\" in system Apps settings\n2. Tap OK, then grant accessibility access on the next screen\n3. Right-slider will then return to E-Ink Launcher</string>
+    <string name="launcher_redirect_enabled_toast">Right-slider redirect armed. Trigger the slider to test.</string>
+    <string name="launcher_redirect_disabled_toast">Right-slider redirect disabled.</string>
+    <string name="dialog_ok">OK</string>
+
     <string name="setting_floating_home">Floating Home Button</string>
     <string name="floating_home_label">Home button</string>
     <string name="floating_home_running">Floating Home active</string>

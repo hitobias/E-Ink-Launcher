@@ -46,6 +46,9 @@ public class Config {
   public static final String KEY_FLOATING_HOME_Y = "launcherFloatingHomeY";
   public static final String KEY_FLOATING_HOME_SIZE_DP = "launcherFloatingHomeSizeDp";
   public static final int FLOATING_HOME_DEFAULT_SIZE_DP = 44;
+
+  /** OEM launcher redirect (Supernote 右側滑條接管)。 */
+  public static final String KEY_LAUNCHER_REDIRECT_ENABLED = "launcherRedirectEnabled";
   /** 通知角标总开关（默认关闭，开启时需要用户授予通知访问权限）。 */
   public static final String KEY_NOTIFICATION_BADGE = "launcherNotificationBadge";
   /** Schema 版本号，用于将来字段重命名 / 类型变更时做迁移。 */
@@ -434,5 +437,15 @@ public class Config {
 
   public void setFloatingHomeSizeDp(int dp) {
     prefs.edit().putInt(KEY_FLOATING_HOME_SIZE_DP, dp).apply();
+  }
+
+  // ---- OEM launcher redirect ----
+
+  public boolean isLauncherRedirectEnabled() {
+    return prefs.getBoolean(KEY_LAUNCHER_REDIRECT_ENABLED, false);
+  }
+
+  public void setLauncherRedirectEnabled(boolean enabled) {
+    prefs.edit().putBoolean(KEY_LAUNCHER_REDIRECT_ENABLED, enabled).apply();
   }
 }
