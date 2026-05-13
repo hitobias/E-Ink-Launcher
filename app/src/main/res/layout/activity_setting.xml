@@ -571,34 +571,6 @@
                 android:background="#000000" />
 
             <TextView
-                android:id="@+id/floatingHome"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/menu_item_height"
-                android:paddingLeft="20dp"
-                android:gravity="left|center_vertical"
-                android:text="@string/setting_floating_home"
-                android:textSize="@dimen/menu_item_text_size" />
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#000000" />
-
-            <TextView
-                android:id="@+id/launcherRedirect"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/menu_item_height"
-                android:paddingLeft="20dp"
-                android:gravity="left|center_vertical"
-                android:text="@string/setting_launcher_redirect"
-                android:textSize="@dimen/menu_item_text_size" />
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#000000" />
-
-            <TextView
                 android:id="@+id/returnNotification"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/menu_item_height"

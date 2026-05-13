@@ -22,8 +22,8 @@ android {
         applicationId = "cn.modificator.launcher"
         minSdk = 21
         targetSdk = 36
-        versionCode = 37
-        versionName = "0.2.7"
+        versionCode = 38
+        versionName = "0.2.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

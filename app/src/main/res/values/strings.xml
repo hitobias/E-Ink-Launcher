@@ -139,23 +139,6 @@
     <string name="hidden_restored">Restored</string>
     <string name="hidden_restored_all">All restored</string>
 
-    <string name="setting_launcher_redirect">Redirect Supernote Right-Slider</string>
-    <string name="launcher_redirect_description">Detects when the Supernote stock launcher comes to the foreground (via the hardwired right-slider gesture) and immediately switches back to E-Ink Launcher.</string>
-    <string name="launcher_redirect_summary">Reclaims the Supernote right-slider home gesture for E-Ink Launcher.</string>
-    <string name="launcher_redirect_steps">To use this:\n1. Tap \"Open Supernote app\" and press Enable on its app info page\n2. Come back here, then tap \"Open Accessibility\" and turn on this service\n3. Right-slider will then return to E-Ink Launcher</string>
-    <string name="launcher_redirect_open_supernote">Open Supernote app</string>
-    <string name="launcher_redirect_open_accessibility">Open Accessibility</string>
-    <string name="launcher_redirect_enabled_toast">Right-slider redirect armed. Trigger the slider to test.</string>
-    <string name="launcher_redirect_disabled_toast">Right-slider redirect disabled.</string>
-    <string name="dialog_ok">OK</string>
-
-    <string name="setting_floating_home">Floating Home Button</string>
-    <string name="floating_home_label">Home button</string>
-    <string name="floating_home_running">Floating Home active</string>
-    <string name="floating_home_running_summary">Tap the on-screen button to return to launcher.</string>
-    <string name="floating_home_need_permission">Grant \"Display over other apps\" permission first.</string>
-    <string name="floating_home_enabled_toast">Floating Home enabled — drag to reposition, tap to go home.</string>
-    <string name="floating_home_disabled_toast">Floating Home disabled.</string>
     <string name="setting_dock_enabled">Show Quick-Launch Dock</string>
     <string name="dock_description">Quick-launch dock</string>
     <string name="dock_item_description">Pinned app</string>

@@ -30,9 +30,6 @@
         tools:ignore="QueryAllPackagesPermission" />
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
-    <!-- 懸浮 Home 按鈕：Supernote 右側滑條 hardwired 到 SupernoteLauncher，
-         禁用後系統無 nav，全屏 overlay 是唯一可靠的回桌面途徑。 -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <!-- Legacy storage permissions, only needed when reading custom icon files from public Documents on older Android. -->
     <uses-permission
@@ -119,28 +116,6 @@
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Persistent notification that returns the user to the e-ink launcher on devices where Home key cannot be remapped." />
-        </service>
-
-        <service
-            android:name=".model.FloatingHomeService"
-            android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="System-wide floating button that returns the user to the e-ink launcher; required where the device OEM hardcodes the home gesture to a non-replaceable component." />
-        </service>
-
-        <service
-            android:name=".model.LauncherRedirectService"
-            android:exported="true"
-            android:label="@string/setting_launcher_redirect"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/launcher_redirect_accessibility" />
         </service>
 
         <service

@@ -2,6 +2,39 @@
 
 All notable changes to this fork.
 
+## [0.2.8] — 2026-05-13
+
+### Removed (safety rollback — affects Supernote and likely other EMR devices)
+
+The following features introduced in v0.2.4–v0.2.7 are removed because
+they break stylus/touch input on Supernote (Chauvet OS):
+
+- **Floating Home Button** (v0.2.4) — `SYSTEM_ALERT_WINDOW` overlay.
+- **Right-Slider Redirect via AccessibilityService** (v0.2.5–v0.2.7).
+  Binding any AccessibilityService on Supernote re-routes the touch
+  pipeline and causes EMR handwriting to fail. Recovery on affected
+  devices required boot-to-safe-mode + uninstall.
+- **Redirect diagnostics** (v0.2.7) and the associated long-press surface.
+- `SYSTEM_ALERT_WINDOW` permission entirely (was only used by Floating
+  Home).
+- All four locales' strings + the `launcher_redirect_accessibility.xml`
+  service config.
+
+Config migration (schema v1 → v2) wipes stale `launcherFloatingHome*`
+and `launcherRedirectEnabled` prefs so upgrades land clean.
+
+### Kept
+
+- v0.2.2 P0 crash fix (EpdRefresh `ConcurrentHashMap.put(k, null)` NPE).
+- Quick-Launch Dock.
+- Version + build display in About.
+- Everything from v0.2.0–v0.2.3.
+
+If you need to return to E-Ink Launcher from a screen with no Home gesture
+on Supernote, enable Settings → *Persistent return-to-launcher
+notification* — pull down the notification shade and tap *Home*. This was
+present from v0.2.0 onward and does not touch the input pipeline.
+
 ## [0.2.7] — 2026-05-13
 
 ### Added

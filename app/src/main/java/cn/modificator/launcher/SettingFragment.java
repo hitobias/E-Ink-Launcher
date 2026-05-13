@@ -125,14 +125,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
         uri -> {
           if (uri != null) doImportConfig(uri);
         });
-    overlayPermissionLauncher = registerForActivityResult(
-        new ActivityResultContracts.StartActivityForResult(),
-        result -> onOverlayPermissionResult());
   }
-
-  private ActivityResultLauncher<Intent> overlayPermissionLauncher;
-  private TextView floatingHome;
-  private TextView launcherRedirect;
 
   private void doExportConfig(android.net.Uri uri) {
     try (java.io.OutputStream out = requireContext().getContentResolver().openOutputStream(uri)) {
@@ -236,20 +229,6 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     if (dockEnabled != null) {
       dockEnabled.setOnClickListener(this);
       dockEnabled.getPaint().setStrikeThruText(!config.isDockEnabled());
-    }
-    floatingHome = root.findViewById(R.id.floatingHome);
-    if (floatingHome != null) {
-      floatingHome.setOnClickListener(this);
-      updateFloatingHomeLabel();
-    }
-    launcherRedirect = root.findViewById(R.id.launcherRedirect);
-    if (launcherRedirect != null) {
-      launcherRedirect.setOnClickListener(this);
-      launcherRedirect.setOnLongClickListener(v -> {
-        showRedirectDiagnostics();
-        return true;
-      });
-      updateLauncherRedirectLabel();
     }
     fontControl.setProgress((int) ((config.getFontSize() - 10) * 10));
 
@@ -429,10 +408,6 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
       handleToggleNotificationBadge();
     } else if (id == R.id.dockEnabled) {
       handleToggleDock();
-    } else if (id == R.id.floatingHome) {
-      handleToggleFloatingHome();
-    } else if (id == R.id.launcherRedirect) {
-      handleToggleLauncherRedirect();
     } else if (id == R.id.exportConfig) {
       exportConfigLauncher.launch("eink-launcher-config.json");
     } else if (id == R.id.importConfig) {
@@ -769,143 +744,6 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     listener.onDockEnabledChanged(newValue);
   }
 
-  /**
-   * 切換懸浮 Home 按鈕。首次開啟若無 overlay 權限，先跳系統授權頁；
-   * 用戶回到本頁時 {@link #onOverlayPermissionResult()} 收尾。
-   */
-  private void handleToggleFloatingHome() {
-    boolean current = config.isFloatingHomeEnabled();
-    if (current) {
-      config.setFloatingHomeEnabled(false);
-      cn.modificator.launcher.model.FloatingHomeService.stop(requireContext());
-      Toast.makeText(requireContext(),
-          R.string.floating_home_disabled_toast, Toast.LENGTH_SHORT).show();
-      updateFloatingHomeLabel();
-      return;
-    }
-    if (!cn.modificator.launcher.model.FloatingHomeService.canDrawOverlays(requireContext())) {
-      Toast.makeText(requireContext(),
-          R.string.floating_home_need_permission, Toast.LENGTH_LONG).show();
-      Intent grant = new Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-          android.net.Uri.parse("package:" + requireContext().getPackageName()));
-      try {
-        overlayPermissionLauncher.launch(grant);
-      } catch (Exception ignored) {
-      }
-      return;
-    }
-    enableFloatingHomeNow();
-  }
-
-  private void onOverlayPermissionResult() {
-    // 用戶從系統授權頁回來：若已授權則直接啟用；否則無動作（用戶下次再點即可）。
-    if (cn.modificator.launcher.model.FloatingHomeService.canDrawOverlays(requireContext())) {
-      enableFloatingHomeNow();
-    }
-  }
-
-  private void enableFloatingHomeNow() {
-    config.setFloatingHomeEnabled(true);
-    cn.modificator.launcher.model.FloatingHomeService.start(requireContext());
-    Toast.makeText(requireContext(),
-        R.string.floating_home_enabled_toast, Toast.LENGTH_LONG).show();
-    updateFloatingHomeLabel();
-  }
-
-  private void updateFloatingHomeLabel() {
-    if (floatingHome == null) return;
-    floatingHome.getPaint().setStrikeThruText(!config.isFloatingHomeEnabled());
-    floatingHome.invalidate();
-  }
-
-  /**
-   * 接管 Supernote 右側滑條：先彈說明對話框告知用戶要重新啟用原廠 launcher
-   * + 授予無障礙權限；同意後跳到系統無障礙設定頁，用戶回來後 onResume 再
-   * 重新讀取狀態並更新標籤。
-   */
-  private void handleToggleLauncherRedirect() {
-    boolean current = config.isLauncherRedirectEnabled();
-    if (current) {
-      config.setLauncherRedirectEnabled(false);
-      Toast.makeText(requireContext(),
-          R.string.launcher_redirect_disabled_toast, Toast.LENGTH_SHORT).show();
-      updateLauncherRedirectLabel();
-      return;
-    }
-    // 先設置 config flag——AccessibilityService 啟用後立即生效，不必再回到設定頁。
-    config.setLauncherRedirectEnabled(true);
-    // 3 顆按鈕：
-    // - 正向：跳系統「無障礙服務」設定（第 2 步：授權）
-    // - 中性：直接打開 SupernoteLauncher 的「應用資訊」（第 1 步：啟用該包）
-    // - 取消：回退 config
-    new android.app.AlertDialog.Builder(requireContext())
-        .setTitle(R.string.setting_launcher_redirect)
-        .setMessage(R.string.launcher_redirect_steps)
-        .setNeutralButton(R.string.launcher_redirect_open_supernote, (d, w) ->
-            openSupernoteLauncherAppInfo())
-        .setPositiveButton(R.string.launcher_redirect_open_accessibility, (d, w) -> {
-          try {
-            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-          } catch (Exception ignored) {
-          }
-        })
-        .setNegativeButton(R.string.dialog_cancel, (d, w) -> {
-          config.setLauncherRedirectEnabled(false);
-          updateLauncherRedirectLabel();
-        })
-        .show();
-  }
-
-  /**
-   * 直接跳到 SupernoteLauncher 的「應用資訊」頁，用戶可一鍵點「啟用」。
-   * 系統不一定每個 ROM 都支援 disabled package 的詳情頁，失敗時退回全 app 列表。
-   */
-  private void openSupernoteLauncherAppInfo() {
-    Intent direct = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-        .setData(android.net.Uri.parse("package:com.ratta.supernote.launcher"))
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    try {
-      startActivity(direct);
-      return;
-    } catch (Exception ignored) {
-    }
-    Intent fallback = new Intent(Settings.ACTION_MANAGE_ALL_APPLICATIONS_SETTINGS)
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    try {
-      startActivity(fallback);
-    } catch (Exception ignored) {
-    }
-  }
-
-  private void updateLauncherRedirectLabel() {
-    if (launcherRedirect == null) return;
-    // 配置開啟 && 系統無障礙權限已授予 = 真正啟用；strikethrough 表示「未啟用」。
-    boolean active = config.isLauncherRedirectEnabled()
-        && cn.modificator.launcher.model.LauncherRedirectService.isEnabled(requireContext());
-    launcherRedirect.getPaint().setStrikeThruText(!active);
-    launcherRedirect.invalidate();
-  }
-
-  /** 長按設定項時顯示診斷報告，協助排查右側滑條為何沒反應。 */
-  private void showRedirectDiagnostics() {
-    String report = LauncherRedirectDiagnostics.build(requireContext());
-    TextView tv = new TextView(requireContext());
-    tv.setText(report);
-    tv.setTextColor(0xff000000);
-    tv.setTextSize(12);
-    tv.setTextIsSelectable(true);
-    tv.setTypeface(android.graphics.Typeface.MONOSPACE);
-    int pad = cn.modificator.launcher.Utils.dp2Px(requireContext(), 16);
-    tv.setPadding(pad, pad, pad, pad);
-    new android.app.AlertDialog.Builder(requireContext())
-        .setTitle(R.string.setting_launcher_redirect)
-        .setView(tv)
-        .setPositiveButton(R.string.dialog_close, null)
-        .setNeutralButton(R.string.launcher_redirect_open_supernote, (d, w) ->
-            openSupernoteLauncherAppInfo())
-        .show();
-  }
 
   /**
    * 在最新平台上请求合适的存储/媒体权限，授权后执行回调。
@@ -941,7 +779,5 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     super.onResume();
     updateDefaultLauncherLabel();
     updateNotificationBadgeLabel();
-    // 用戶從系統無障礙設定頁回來時刷新接管狀態標籤。
-    updateLauncherRedirectLabel();
   }
 }

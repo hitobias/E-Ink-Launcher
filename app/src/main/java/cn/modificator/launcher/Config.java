@@ -40,22 +40,13 @@ public class Config {
   /** Dock 最多允許的釘住數量（避免擠爆底部）。 */
   public static final int DOCK_MAX_SIZE = 5;
 
-  /** 懸浮 Home 按鈕。 */
-  public static final String KEY_FLOATING_HOME_ENABLED = "launcherFloatingHomeEnabled";
-  public static final String KEY_FLOATING_HOME_X = "launcherFloatingHomeX";
-  public static final String KEY_FLOATING_HOME_Y = "launcherFloatingHomeY";
-  public static final String KEY_FLOATING_HOME_SIZE_DP = "launcherFloatingHomeSizeDp";
-  public static final int FLOATING_HOME_DEFAULT_SIZE_DP = 44;
-
-  /** OEM launcher redirect (Supernote 右側滑條接管)。 */
-  public static final String KEY_LAUNCHER_REDIRECT_ENABLED = "launcherRedirectEnabled";
   /** 通知角标总开关（默认关闭，开启时需要用户授予通知访问权限）。 */
   public static final String KEY_NOTIFICATION_BADGE = "launcherNotificationBadge";
   /** Schema 版本号，用于将来字段重命名 / 类型变更时做迁移。 */
   public static final String KEY_SCHEMA_VERSION = "_schemaVersion";
 
   /** 当前 schema 版本。变更字段时递增，并在 {@link #migrate} 中处理对应版本号。 */
-  public static final int CURRENT_SCHEMA_VERSION = 1;
+  public static final int CURRENT_SCHEMA_VERSION = 2;
 
   // ---- 默认值 ----
   private static final int DEFAULT_COL_NUM = 5;
@@ -97,7 +88,7 @@ public class Config {
 
   /**
    * 跑一次性迁移：把存储的 schema 版本升到 {@link #CURRENT_SCHEMA_VERSION}。
-   * 当前版本 1 也清理已废弃的 FTP 偏好键，防止旧版本残留占空间。
+   * v1 清理 FTP 残留；v2 清理 v0.2.4-2.7 风险功能（懸浮 Home / 無障礙接管）的偏好。
    */
   private void migrateIfNeeded() {
     int stored = prefs.getInt(KEY_SCHEMA_VERSION, 0);
@@ -106,6 +97,14 @@ public class Config {
     if (stored < 1) {
       // v1: 移除 FTP 相关偏好
       e.remove("ftpPort").remove("ftpUser").remove("ftpPassword");
+    }
+    if (stored < 2) {
+      // v2: 移除已删除的危险功能偏好（Supernote 上會干擾 EMR 觸控）
+      e.remove("launcherFloatingHomeEnabled")
+          .remove("launcherFloatingHomeX")
+          .remove("launcherFloatingHomeY")
+          .remove("launcherFloatingHomeSizeDp")
+          .remove("launcherRedirectEnabled");
     }
     e.putInt(KEY_SCHEMA_VERSION, CURRENT_SCHEMA_VERSION).apply();
   }
@@ -406,46 +405,4 @@ public class Config {
     return true;
   }
 
-  // ---- 懸浮 Home 按鈕 ----
-
-  public boolean isFloatingHomeEnabled() {
-    return prefs.getBoolean(KEY_FLOATING_HOME_ENABLED, false);
-  }
-
-  public void setFloatingHomeEnabled(boolean enabled) {
-    prefs.edit().putBoolean(KEY_FLOATING_HOME_ENABLED, enabled).apply();
-  }
-
-  public int getFloatingHomeX() {
-    return prefs.getInt(KEY_FLOATING_HOME_X, -1);
-  }
-
-  public int getFloatingHomeY() {
-    return prefs.getInt(KEY_FLOATING_HOME_Y, -1);
-  }
-
-  public void setFloatingHomePosition(int x, int y) {
-    prefs.edit()
-        .putInt(KEY_FLOATING_HOME_X, x)
-        .putInt(KEY_FLOATING_HOME_Y, y)
-        .apply();
-  }
-
-  public int getFloatingHomeSizeDp() {
-    return prefs.getInt(KEY_FLOATING_HOME_SIZE_DP, FLOATING_HOME_DEFAULT_SIZE_DP);
-  }
-
-  public void setFloatingHomeSizeDp(int dp) {
-    prefs.edit().putInt(KEY_FLOATING_HOME_SIZE_DP, dp).apply();
-  }
-
-  // ---- OEM launcher redirect ----
-
-  public boolean isLauncherRedirectEnabled() {
-    return prefs.getBoolean(KEY_LAUNCHER_REDIRECT_ENABLED, false);
-  }
-
-  public void setLauncherRedirectEnabled(boolean enabled) {
-    prefs.edit().putBoolean(KEY_LAUNCHER_REDIRECT_ENABLED, enabled).apply();
-  }
 }

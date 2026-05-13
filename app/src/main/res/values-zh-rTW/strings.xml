@@ -138,23 +138,6 @@
     <string name="hidden_restored">已恢復</string>
     <string name="hidden_restored_all">已全部恢復</string>
 
-    <string name="setting_launcher_redirect">接管 Supernote 右側滑條</string>
-    <string name="launcher_redirect_description">偵測 Supernote 原廠 launcher 因右側滑條手勢被啟動的瞬間，立即切回 E-Ink Launcher。</string>
-    <string name="launcher_redirect_summary">把 Supernote 的右側滑條手勢接管到本 launcher。</string>
-    <string name="launcher_redirect_steps">使用步驟：\n1. 點下方「打開 Supernote」→ 在應用資訊頁按「啟用」\n2. 回到本頁 → 點「打開無障礙」→ 啟用本服務\n3. 之後右側滑條即會回到 E-Ink Launcher</string>
-    <string name="launcher_redirect_open_supernote">打開 Supernote</string>
-    <string name="launcher_redirect_open_accessibility">打開無障礙</string>
-    <string name="launcher_redirect_enabled_toast">右側滑條接管已啟動，可試試手勢驗證。</string>
-    <string name="launcher_redirect_disabled_toast">右側滑條接管已關閉。</string>
-    <string name="dialog_ok">確定</string>
-
-    <string name="setting_floating_home">懸浮 Home 按鈕</string>
-    <string name="floating_home_label">Home 按鈕</string>
-    <string name="floating_home_running">懸浮 Home 運行中</string>
-    <string name="floating_home_running_summary">點螢幕上的按鈕回到桌面。</string>
-    <string name="floating_home_need_permission">請先授予「在其他應用上層顯示」權限。</string>
-    <string name="floating_home_enabled_toast">已啟用懸浮 Home — 拖拽可移位，點擊回桌面。</string>
-    <string name="floating_home_disabled_toast">已關閉懸浮 Home。</string>
     <string name="setting_dock_enabled">顯示快速啟動 Dock</string>
     <string name="dock_description">快速啟動列</string>
     <string name="dock_item_description">已釘住的應用</string>
